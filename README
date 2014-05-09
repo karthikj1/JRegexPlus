@@ -2,8 +2,11 @@ This is a proof of concept Regular Expression engine that handles submatch group
 
 It handles most of the constructs handled by the java.util.regex engine except for reluctant quantifiers, named groups and UNICODE characters. 
 
+See http://karthikj1.github.io/JRegexPlus/ for more details.
+
 Atomic grouping and possessive quantifiers are not supported but are not necessary since they are primarily a way to work around issues created by backtracking. Non-capturing groups are not supported since they do not provide a significant performance advantage with this engine's method of operation.
 
 UNICODE characters are not yet supported.
 
 Various flags supported by Java are not yet supported by this engine - only case-sensitive, comment and the newline related flags are relevant in the absence of UNICODE support. The default flag settings are CASE_INSENSITIVE off, UNIX_LINES and DOTALL on.
+
