@@ -1,0 +1,4 @@
+- START and END are implemented incorrectly according to the meaning of \A and \z
+- get_matches_from_state in stateObject can create a large return array with empty rows if there are groups that captured nothing
+- test lookahead and lookbehind in combination with backrefs and check submatches etc are correct.
+- cache results from eclose rather than recalculating every time
