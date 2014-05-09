@@ -1,0 +1,83 @@
+<HTML>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+    <title>JRegexPlus by Karthik Jayaraman</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>JRegexPlus</h1>
+          <h2>Regular Expression engine - Backreferences without backtracking</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/karthikj1/regex/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/karthikj1/regex/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/karthikj1/regex" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+        <h2 id="a-tour-of-jregexplus"><strong><em>A tour of JRegexPlus</em></strong></h2>
+
+<p><strong>Step 1. Lexical Analysis</strong></p>
+
+<p>This is conducted by the Tokenizer class which takes the regular expression string and converts it into a stream of tokens. these tokens are represented internally by the RegexToken class and its subclasses. The subclasses contain information specific to various types of tokens such as character classes, lookaround operators, backreferences etc.</p>
+
+<p><strong>Step 2. Parsing</strong> <br></p>
+<p>    This is the job of the Pattern class. This is a handwritten recursive descent parser that converts the stream of tokens into a transition table and then returns a Matcher object seeded with that transition table. More below on how the transition table gets built.</p>
+
+<p><strong>Step 3. Match</strong> <br></p>
+   <p></p> The user can now use the Matcher instance to run matches on any input string. The Matcher instance can then be used to extract any results found.</p>
+
+<hr>
+
+<h2 id="how-it-works"><strong><em>How it works</em></strong></h2>
+
+<hr>
+
+<p>Most popular regular expression engines(Perl, java.util.regex, PCRE etc) use a traditional NFA with backtracking to match regular expressions. These are highly effective as seen from their wide use and popularity but are known to have corner cases that they cannot handle. For eg., the regular expression <code>X(.+)+X</code> with the string <code>=XX==============</code> will cause these regular expression engines to hang or crash given sufficient numbers of = signs at the end(30-40 are usually more than enough).</p>
+
+<p>JRegexPlus implements the McNaughton-Yamada-Thompson algorithm to construct an NFA. This algorithm is described in detail in Aho, Lam, Sethi, and Ullman's 2006 <em>Compilers: Principles, Techniques, and Tools</em>(Algorithm 3.23) and has the advantage of being as fast as the standard backtracking implementations in normal cases while maintaining its performance in the corner cases.</p>
+
+<p>However, the algorithm, as described in textbooks, does not allow either for sub-match tracking or for backreferences. The following paragraphs explain how JRegexPlus adapts the algorithm to allow both. The description below is a bit terse for now and is best read after understanding how existing regular expression engines work. Russ Cox's <a href="http://swtch.com/~rsc/regexp/regexp1.html">description of RE2</a>
+and Eli Bendersky's <a href="http://eli.thegreenplace.net/files/docs/forays/col4.html">series of articles</a> both provide good explanations as does Jeff Friedl's book <em>Mastering Regular Expressions</em>.</p>
+
+<p><strong><em>Submatch grouping</em></strong></p>
+
+<p>This happens at the parser level and during the simulation. When parsing, the parser stores a list in each token that contains the ID's of the groups to which that token belongs. Later, when the engine simulates the NFA, each state carries a satellite object around with it which contains the partial string match that has happened so far. For each letter in that partial match, the satellite object contains an array which records which subgroups in the regular expression matched that letter.</p>
+
+<p>Note that since this is an NFA, it exists in multiple states at the same time, each of which may have followed different paths. As a result, the same letter may belong to different subgroups in different state objects. However, since this is a Thompson NFA, the simulation is text-directed and not regex-directed, meaning that the string is read one character at a time and all the states are fed that character simultaneously.</p>
+
+<p>At each step, the simulation tracks if the NFA has reached the finish state and records the longest match so far, if any. The simulation ends when the string ends or when the NFA is dead(i.e. it reaches a finish state, records it success and then reads one more character which makes it die). Since we did reach the finish state, the NFA reports success and the longest match found is the matched string. As described earlier, each letter of the string is in a satellite state object which records the groups to which it belongs so finding submatch groupings is a simple matter of going through those lists of group ID's and creating an array of strings for each subgroup.</p>
+
+<p><strong><em>Backreferences</em></strong> <br></p>
+
+<p>This essentially involves simulating multiple NFA's simultaneously. Recall that the Thompson construction has the NFA in multiple states at the same time while we read the string character by character. To accommodate back-references, what we do is maintain a stack of NFA's and, every time we read a character from the input string, we pop the NFA's from the stack one at a time and perform state transitions on them with the one character in the usual way. NFA's that are alive after this step get pushed back on to the stack until all NFA's are dead. At this point, we look if any NFA reached a finish state and recorded a success for us to return.</p>
+
+<p>The next question is where these additional NFA's come from and what their relationship is with backreferences. The answer is as follows - every time an NFA simulation encounters a backreference token in its transition table, it looks at the path taken to that state and figures out what string that backreference is supposed to match. This information is available in the satellite state object associated with each live state in the NFA. Note that the backreference only matches a simple string and not a full-fledged regular expression. </p>
+
+<p>Now that we know what the backreference is supposed to match, we create a transition table to match that string and, rather than try to match that table and backtrack and so on, we create a new transition matrix by <em>inserting</em> that table into the existing transition table and create one big table which has replaced the backreference token with a series of tokens that represent the string the backreference should match at that position. This new table then gets pushed onto the stack of NFA's and is simulated along with the parent table and any other table that gets created along the way. </p>
+
+<p>Here is an example to make it clearer - consider the regex <code>(a*)bc\1</code> on the string <code>zzzaabcaazzz</code>.</p>
+
+<p>The engine chugs along as you would expect with a Thompson NFA and matches <code>aabc</code> in the string with <code>(a*)bc</code> in the regex. Now, it has reached the backreference and the next character needs to match whatever the backreference refers to. In this case, the submatch for group 1 is <code>aa</code> so the simulator inserts a table to match <code>aa</code> and deletes the backreference token from the new table. The simulator now looks for two additional <code>a</code>characters, finds them and returns a match for the regex which is <code>aabcaa</code>.</p>
+
+<p>And there you have it!</p>
+        </section>
+       </div>
+    </div>
+  </body> 
+</HTML>
