@@ -24,7 +24,7 @@ public class RegexTester {
      */
     public static void main(String[] args) {
 
-        String test_input_file = "regex_test_cases.txt";        
+        String test_input_file = "simple_test.txt";        
         File output_file = new File("results.txt");
         
         final int NUM_TRIALS = 100;
