@@ -42,6 +42,13 @@ class RegexToken implements Matchable{
         return groupIDList;
     }
 
+    public int getMaxID(){
+        if(groupIDList.size() == 0)
+            return 0;
+        else            
+            return groupIDList.get(groupIDList.size() - 1);
+    }
+    
     List<Integer> addGroupIDList(List<Integer> newGroupID) {
         for(Integer i: newGroupID)
             if(!groupIDList.contains(i))

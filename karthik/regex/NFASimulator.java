@@ -85,12 +85,19 @@ class NFASimulator {
             while(!temp_stack.isEmpty())
                 nfa_stack.push(temp_stack.pop());
             }
-            
+          
+        while(!nfa_stack.isEmpty())
+              {
+                current_nfa = nfa_stack.pop();
+                transMatrix = current_nfa.trans_table;
+                states = current_nfa.states;
+                finish = transMatrix.getFinish();        
+          
           // one final boundary_close in case there is a $ in the regex to match the end of the string
             // capture successes if any
               states = boundary_close(states, ctr);  
               longest_success = get_longest_success(states, longest_success);
-                 
+              }       
         return longest_success;   
     }
 

@@ -352,15 +352,24 @@ public class Pattern {
         }
     
     private boolean back_reference() throws ParserException{
-        RegexToken current = getCurrentToken();
+        RegexToken current = getCurrentToken();        
+        
         if(current.type == RegexTokenNames.BACKREFERENCE){
             // back reference number has to be to a group that has aready been captured
             // i.e. can't have /3 if there have only been 2 groups so far
-            if(((BackReferenceRegexToken) current).getBackRefID() > groupID)
+            
+            int backrefID = ((BackReferenceRegexToken) current).getBackRefID();
+            if(backrefID > groupID)
                 throw new ParserException("Regex cannot be parsed: Back Reference to group ID " + 
                         ((BackReferenceRegexToken) current).getBackRefID() +
                         " but there have only been " + groupID + " groups so far");
-            
+            /*
+            // and can't have /1 inside group 1 either
+            if(backrefID >= current.getMaxID())
+                throw new ParserException("Regex cannot be parsed: Back Reference to group ID " + 
+                        ((BackReferenceRegexToken) current).getBackRefID() +
+                        " in group " + current.getMaxID());
+            */
             current.addGroupIDList(groupIDList);
             if(LOG)
                 System.out.println("in back_reference() - added " + current.toString());
