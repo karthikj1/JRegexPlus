@@ -66,6 +66,12 @@
      <td headers="matches">The character <i>x</i></td></tr>
  <tr><td valign="top" headers="construct characters"><tt>\\</tt></td>
      <td headers="matches">The backslash character</td></tr>
+<tr><td valign="top" headers="construct characters"><tt>\0</tt><i>mnn</i></td>
+     <td headers="matches">The character with octal value <tt>0</tt><i>mnn</i>
+         (0&nbsp;<tt>&lt;=</tt>&nbsp;<i>m</i>&nbsp;<tt>&lt;=</tt>&nbsp;3,
+         0&nbsp;<tt>&lt;=</tt>&nbsp;<i>n</i>&nbsp;<tt>&lt;=</tt>&nbsp;7)</td></tr>
+ <tr><td valign="top" headers="construct characters"><tt>\x</tt><i>hh</i></td>
+     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;<tt>0x</tt><i>hh</i></td></tr>
  <tr><td valign="top" headers="matches"><tt>\t</tt></td>
      <td headers="matches">The tab character (<tt>'&#92;u0009'</tt>)</td></tr>
  <tr><td valign="top" headers="construct characters"><tt>\n</tt></td>
@@ -224,8 +230,6 @@
 <p>The boundary matcher \G is not needed with this engine's method of operation and is not supported. </p>
 
 <p>Lazy quantifiers and named capturing groups are not supported.</p>
-
-<p>Character representation with octal and hexadecimal numbers are not yet supported.</p>
 
 <p>UNICODE characters and character classes are not yet supported.</p>
 
