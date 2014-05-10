@@ -206,24 +206,6 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-    TransitionTable question(){
-        
-        int oldFinish = getFinish();
-        removeTransition(oldFinish, oldFinish);
-        
-        expand_table(1);
-        finish = getNumStates() - 1;
-        // set e-transitions for new start state
-                
-        setTransition(start, finish, eps);        
-        
-        // set e-transition to go to new finish state
-        setTransition(oldFinish, finish, eps);    
-        setTransition(finish, finish, eps);        
-                        
-        return this;
-    }
-    
     TransitionTable plus(){
         TransitionTable temp = this.clone();
         star();
@@ -240,6 +222,24 @@ class TransitionTable implements Cloneable
         setTransition(oldFinish, oldStart, eps); 
         
        return this;
+    }
+    
+    TransitionTable question(){
+        
+        int oldFinish = getFinish();
+        removeTransition(oldFinish, oldFinish);
+        
+        expand_table(1);
+        finish = getNumStates() - 1;
+        // set e-transitions for new start state
+                
+        setTransition(start, finish, eps);        
+        
+        // set e-transition to go to new finish state
+        setTransition(oldFinish, finish, eps);    
+        setTransition(finish, finish, eps);        
+                        
+        return this;
     }
     
    TransitionTable brace(final int min,final int max){ 
@@ -314,8 +314,8 @@ class TransitionTable implements Cloneable
             }
         
         newTransMatrix.removeTransition(backref_token_row, backref_token_col);
-        newTransMatrix.setTransition(backref_token_row, n1States, eps);
-        newTransMatrix.setTransition(n1States + backref_table.getFinish(), backref_token_col, eps);
+        newTransMatrix.setTransition(backref_token_row, n1States, newTransMatrix.eps);
+        newTransMatrix.setTransition(n1States + backref_table.getFinish(), backref_token_col, newTransMatrix.eps);
         
         return newTransMatrix;
     }

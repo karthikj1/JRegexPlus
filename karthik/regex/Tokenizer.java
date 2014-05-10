@@ -274,6 +274,12 @@ class Tokenizer {
             case 'P':
                 tokens.add(handlePosix(true));
                 break;
+            case 'x': 
+                tokens.add(processHexDigits());
+                break;
+            case '0': 
+                tokens.add(processOctalDigits());
+                break;            
             case '{': case '\\': case '*': case '+': case '.' : case '[' :
             case '(':
                 tokens.add(new RegexToken(RegexTokenNames.CHAR, c));
@@ -286,6 +292,54 @@ class Tokenizer {
                 throw new TokenizerException("Expected control character but found "
                         + "\\" + c + " at index position " + indexPos);
         }
+    }
+    
+    private RegexToken processHexDigits() throws TokenizerException{
+        // allows only two digit hex number in the form \xhh and returns the character 0xhh
+        int hexNumber;
+        StringBuffer hexString = new StringBuffer("");
+        try{
+        hexString.append(inputString.charAt(indexPos++));        
+        hexString.append(inputString.charAt(indexPos++));        
+        hexNumber = Integer.parseInt(hexString.toString(), 16);
+        return new RegexToken(RegexTokenNames.CHAR, (char) hexNumber);
+        }
+        catch (NumberFormatException nfe){
+            throw new TokenizerException("Expected 2 digit hexadecimal number but found" 
+                    + hexString + " " + nfe.getMessage());
+        }
+        catch(StringIndexOutOfBoundsException siobe){
+            throw new TokenizerException("Reached unexpected end of string while processing hexadecimal "
+                    + "escape character " + siobe.getMessage());
+        }        
+    }
+    
+    
+    private RegexToken processOctalDigits() throws TokenizerException{
+        // allows only three digit hex number in the form \xmnn and returns the character 0xmnn
+        // mnn must be less than 256
+        
+        int octalNumber;
+        StringBuffer octalString = new StringBuffer("");
+        
+        try{
+        octalString.append(inputString.charAt(indexPos++));        
+        octalString.append(inputString.charAt(indexPos++));        
+        octalString.append(inputString.charAt(indexPos++));  
+        octalNumber = Integer.parseInt(octalString.toString(), 8);
+        if(octalNumber > 255)
+            throw new TokenizerException("Expected octal number less than \0377 but found " + octalString);
+        
+        return new RegexToken(RegexTokenNames.CHAR, (char) octalNumber);
+        }
+        catch (NumberFormatException nfe){
+            throw new TokenizerException("Expected 3 digit octal number but found" 
+                    + octalString + " " + nfe.getMessage());
+        }
+        catch(StringIndexOutOfBoundsException siobe){
+            throw new TokenizerException("Reached unexpected end of string while processing octal escape character: " 
+                        + siobe.getMessage());
+        }        
     }
     
  private CharClassRegexToken handlePosix(final boolean isNegated) throws TokenizerException{     

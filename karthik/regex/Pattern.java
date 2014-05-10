@@ -119,7 +119,7 @@ public class Pattern {
         return null;
     }
 
-    public ParseObject parse() throws ParserException {
+    ParseObject parse() throws ParserException {
             
         if(RE()){
             TransitionTable transitions = matcherStack.pop();             
