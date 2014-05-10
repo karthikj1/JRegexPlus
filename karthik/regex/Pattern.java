@@ -250,8 +250,7 @@ public class Pattern {
                             ((BraceRegexToken) current).max));
                     break;                
                 default:
-                    System.out.println("Reached unknown unary operator");
-                    break;
+                    throw new ParserException("Reached unknown unary operator" + current.toString());                    
             }
             getNextToken();
             return true;
@@ -339,10 +338,9 @@ public class Pattern {
             {
             ((LookbehindRegexToken) current).createMatcher(groupIDList);
 
-            if (debug_create_tree)
-                {
+            if (debug_create_tree)                
                 debug_tree_stack.push(new Tree<>(current, null, null));
-                }
+                
             matcherStack.push(new TransitionTable(current));
             getNextToken();
             return true;
@@ -361,15 +359,13 @@ public class Pattern {
             int backrefID = ((BackReferenceRegexToken) current).getBackRefID();
             if(backrefID > groupID)
                 throw new ParserException("Regex cannot be parsed: Back Reference to group ID " + 
-                        ((BackReferenceRegexToken) current).getBackRefID() +
-                        " but there have only been " + groupID + " groups so far");
-            /*
+                        backrefID + " but there have only been " + groupID + " groups so far");
+            
             // and can't have /1 inside group 1 either
-            if(backrefID >= current.getMaxID())
+            if(groupIDList.contains(backrefID))
                 throw new ParserException("Regex cannot be parsed: Back Reference to group ID " + 
-                        ((BackReferenceRegexToken) current).getBackRefID() +
-                        " in group " + current.getMaxID());
-            */
+                        backrefID + " in group " + backrefID);
+            
             current.addGroupIDList(groupIDList);
             if(LOG)
                 System.out.println("in back_reference() - added " + current.toString());

@@ -209,15 +209,12 @@ class TransitionTable implements Cloneable
     TransitionTable question(){
         
         int oldFinish = getFinish();
-        int oldStart = getStart();        
         removeTransition(oldFinish, oldFinish);
         
-        expand_table(2);
-        start = getNumStates() - 2;
+        expand_table(1);
         finish = getNumStates() - 1;
         // set e-transitions for new start state
-        
-        setTransition(start, oldStart, eps);
+                
         setTransition(start, finish, eps);        
         
         // set e-transition to go to new finish state
@@ -339,6 +336,7 @@ class TransitionTable implements Cloneable
                 
         transposeMatrix.start = this.getFinish();
         transposeMatrix.finish = this.getStart();
+        transposeMatrix.setTransition(transposeMatrix.finish, transposeMatrix.finish, transposeMatrix.eps);
         
         return transposeMatrix;
         }

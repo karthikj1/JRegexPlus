@@ -85,7 +85,12 @@ class NFASimulator {
             while(!temp_stack.isEmpty())
                 nfa_stack.push(temp_stack.pop());
             }
-          
+
+        // one final boundary_close in case there is a $ in the regex to match the end of the string 
+        // original nfa is evaluated again for edge cases where the match starts on the last boundary 
+        // before end of string. eg. (?<=foo) on an input string foo
+        nfa_stack.push(init_simulator());
+        
         while(!nfa_stack.isEmpty())
               {
                 current_nfa = nfa_stack.pop();
@@ -93,7 +98,6 @@ class NFASimulator {
                 states = current_nfa.states;
                 finish = transMatrix.getFinish();        
           
-          // one final boundary_close in case there is a $ in the regex to match the end of the string
             // capture successes if any
               states = boundary_close(states, ctr);  
               longest_success = get_longest_success(states, longest_success);
