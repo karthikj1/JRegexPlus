@@ -165,7 +165,7 @@ class NFASimulator {
         {
 
         String match_string;
-        TransitionTable backref_string_trans_table = new TransitionTable(new EpsClass());
+        TransitionTable backref_string_trans_table = new TransitionTable(EpsClass.getEpsClass());
         BackReferenceRegexToken backref_token = (BackReferenceRegexToken) match_token;
         Path_to_State target_state_obj;
                 

@@ -12,12 +12,12 @@ import java.util.Map;
 
 /**
  *
- * @author karthtrans_table_listRowk
+ * @author karthik
  */
 class TransitionTable implements Cloneable
     {
     private int start, finish;
-    private final EpsClass eps = new EpsClass();    
+    private final EpsClass eps = EpsClass.getEpsClass();    
 
     private List<Map<Integer, Matchable>> trans_table_list = new ArrayList<>();
 

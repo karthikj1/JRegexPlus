@@ -20,10 +20,7 @@ class Path_to_State {
      * This object stores the path taken to each state to enable submatch recovery
      * Each object contains the string matched so far and the groups to which 
      * each character of that string belongs.
-     *
-     *   GroupIDList is effectively a 2-dimensional sparse matrix implemented as 
-     *   a list of lists.
-     *
+     *         
      *  GroupIDList.get(r) contains the list of group ID's for the r'th character 
      *  in the string being matched.        
      *******************************/

@@ -10,6 +10,9 @@ package karthik.regex;
  *
  * @author karthik
  */
+
+// identifiers used by the parser in Pattern class
+
  enum RegexTokenNames {
     CHAR, CHAR_CLASS, WHITESPACE, DOT, DIGIT, WORD, 
     NONDIGIT, NONWORD,NONWHITESPACE,

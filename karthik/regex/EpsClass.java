@@ -14,7 +14,16 @@ import java.util.List;
  */
 class EpsClass implements Matchable
     {
-
+    private static EpsClass EpsClassRef = null;
+    
+    private EpsClass(){}
+    
+    static EpsClass getEpsClass(){
+        if(EpsClassRef == null)
+            EpsClassRef = new EpsClass();
+        
+        return EpsClassRef;
+    }
     public boolean isEpsilon()
         {
         return true;
