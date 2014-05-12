@@ -14,7 +14,12 @@ import karthik.regex.dataStructures.Stack;
  *
  * @author karthik
  */
-class Enhanced_NFASimulator extends NFASimulator{    
+class Enhanced_NFASimulator extends NFASimulator{ 
+    
+    // handled backreferences as well.
+    // backref algorithm is a bit slower since it has to keep track of more paths
+    // so this is only used if the regex actually contains a backreference
+    // otherwise NFA_Simulator is used which runs a bit quicker
          
     private Stack<EnhancedNFA_StateObject> nfa_stack;
     
