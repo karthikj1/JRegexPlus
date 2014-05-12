@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -53,6 +54,10 @@ class TransitionTable implements Cloneable
     private void removeTransition(int row, int col){
         Map<Integer, Matchable> rowMap = trans_table_list.get(row);
         rowMap.remove(col);        
+    }
+    
+    Set<Integer> getKeySet(int row){
+        return trans_table_list.get(row).keySet();
     }
     
     private void expand_table(int num_states_to_add){
@@ -177,31 +182,31 @@ class TransitionTable implements Cloneable
         
         int starting_num_states = getNumStates();
         int n2States = n2.getNumStates();
-        int oldFinish = getFinish();
+/*        int oldFinish = getFinish();
         int oldStart = getStart();
         removeTransition(oldFinish, oldFinish);
-        n2.removeTransition(n2.getFinish(), n2.getFinish());
+*/        n2.removeTransition(n2.getFinish(), n2.getFinish());
   
         // clone matrix from TransitionTable n2 to new matrix
-        expand_table(n2States + 2);
+     //   expand_table(n2States + 2);
+        expand_table(n2States);
         for(int i = 0; i < n2States; i++)
-            for(int j = 0; j < n2States; j++){
-             token = n2.getTransition(i,j);
-             if(token != null)
-                     setTransition(starting_num_states + i, starting_num_states + j,token);
+            for(int j : n2.getKeySet(i)){
+                 token = n2.getTransition(i,j);             
+                 setTransition(starting_num_states + i, starting_num_states + j,token);
             }
           
         // set e-transitions for new start state
-        start = getNumStates() - 2;
-        setTransition(start, oldStart, eps);
-        setTransition(start, n2.getStart() + starting_num_states, eps);        
+     /*   start = getNumStates() - 2;
+          setTransition(start, oldStart, eps);
+       */ setTransition(start, n2.getStart() + starting_num_states, eps);        
         
       // set e-transition to go to new finish state
-        finish = getNumStates() - 1;
-        setTransition(oldFinish,finish, eps);        
-        setTransition(n2.getFinish() + starting_num_states, finish, eps);     
+    /*    finish = getNumStates() - 1;
+          setTransition(oldFinish,finish, eps);        
+     */   setTransition(n2.getFinish() + starting_num_states, finish, eps);     
           
-        setTransition(finish, finish, eps);
+  //      setTransition(finish, finish, eps);
         
         return this;
     }
@@ -252,9 +257,10 @@ class TransitionTable implements Cloneable
             return this;
         }         
             
-        temp = this.clone();   
         if(min == 0)
            question();
+        temp = this.clone();   
+        temp.removeTransition(temp.getFinish(), temp.getFinish());
         
         for(int r = 2; r < min; r++)
             concat(temp);        
@@ -300,17 +306,15 @@ class TransitionTable implements Cloneable
                 
         // copy matrix from TransitionTable in <this> object to new matrix
         for(int i = 0; i < n1States; i++)
-            for(int j = 0; j < n1States; j++){
-                token = getTransition(i,j);
-                if(token != null)
-                    newTransMatrix.setTransition(i,j,token);             
+            for(int j : getKeySet(i)){
+                token = getTransition(i,j);                
+                newTransMatrix.setTransition(i,j,token);             
             }
         // copy matrix from TransitionTable backref_table to new matrix
         for(int i = 0; i < n2States; i++)
-            for(int j = 0; j < n2States; j++){
-                token = backref_table.getTransition(i,j);
-                if(token != null)
-                    newTransMatrix.setTransition(n1States + i, n1States + j, token);
+            for(int j : backref_table.getKeySet(i)){
+                token = backref_table.getTransition(i,j);                
+                newTransMatrix.setTransition(n1States + i, n1States + j, token);
             }
         
         newTransMatrix.removeTransition(backref_token_row, backref_token_col);
@@ -328,7 +332,7 @@ class TransitionTable implements Cloneable
         Matchable token;
 
         for (int transMatrixRow = 0; transMatrixRow < numStates; transMatrixRow++)
-            for (int col : trans_table_list.get(transMatrixRow).keySet())
+            for (int col : getKeySet(transMatrixRow))
                 {
                 token = this.getTransition(transMatrixRow, col);
                 transposeMatrix.setTransition(col, transMatrixRow, token);
@@ -355,11 +359,10 @@ class TransitionTable implements Cloneable
             newTable.expand_table(numStates);
             
             for (int transMatrixRow = 0; transMatrixRow < numStates; transMatrixRow++)
-                for (Integer col =  0; col < numStates; col++)
+                for (Integer col : getKeySet(transMatrixRow))
                     {
-                    token = this.getTransition(transMatrixRow, col);
-                    if(token != null)
-                        newTable.setTransition(transMatrixRow, col, token);
+                    token = this.getTransition(transMatrixRow, col);                    
+                    newTable.setTransition(transMatrixRow, col, token);
                     }
 
             return newTable;

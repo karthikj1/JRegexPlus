@@ -6,8 +6,6 @@
 
 package karthik.regex;
 
-import java.util.Map;
-
 /**
  *
  * @author karthik
@@ -15,9 +13,9 @@ import java.util.Map;
 class NFA_StateObject
     {
     TransitionTable trans_table;
-    Map<Integer, Path_to_State> states;
+    Path_to_State_List states;
 
-    NFA_StateObject(TransitionTable t, Map<Integer, Path_to_State> m)
+    NFA_StateObject(TransitionTable t, Path_to_State_List m)
         {
             trans_table = t;
             states = m;

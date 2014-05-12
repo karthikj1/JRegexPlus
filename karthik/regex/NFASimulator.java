@@ -6,8 +6,6 @@
 
 package karthik.regex;
 
-import java.util.HashMap;
-import java.util.Map;
 import karthik.regex.dataStructures.Stack;
 
 /**
@@ -37,7 +35,7 @@ class NFASimulator {
     
     private NFA_StateObject init_simulator(){
         transMatrix = original_start_table;
-        Map<Integer, Path_to_State> eclosed_start_states = new HashMap<>();        
+        Path_to_State_List eclosed_start_states = new Path_to_State_List();        
         
         Integer start = original_start_table.getStart();
         eclosed_start_states.put(start, new Path_to_State());
@@ -56,7 +54,7 @@ class NFASimulator {
         nfa_stack = new Stack<>();
         
         original_nfa = init_simulator();
-        Map<Integer, Path_to_State> states = new HashMap<>();
+        Path_to_State_List states = new Path_to_State_List();
         nfa_stack.push(original_nfa);
         
         search_string = s.toString();
@@ -105,7 +103,7 @@ class NFASimulator {
         return longest_success;   
     }
 
-    private Path_to_State get_longest_success(Map<Integer, Path_to_State> states, Path_to_State longest_success)
+    private Path_to_State get_longest_success(Path_to_State_List states, Path_to_State longest_success)
         {
         /* checks if states contains any finish states and return the longer of
          * the finish state or the current longest success.
@@ -123,26 +121,24 @@ class NFASimulator {
         }
     
 
-   private Map<Integer, Path_to_State> move(final Map<Integer, Path_to_State> source_states, int pos) throws MatcherException{
+   private Path_to_State_List move(final Path_to_State_List source_states, int pos) throws MatcherException{
         /* assumes source_states has already been e-closed
            moves to new state based on one character at index pos from the string to match_string
            and returns a new set of states along with their related state objects
         */
-        Map<Integer, Path_to_State> move_states = new HashMap<>();
+        Path_to_State_List move_states = new Path_to_State_List();
         Path_to_State target_state_obj;
-        Matchable match_token;        
-        
-        int numStates = transMatrix.getNumStates();
+        Matchable match_token;                        
         
         if (source_states == null) {
             return null;
         }
         
         for (Integer current_state : source_states.keySet()) {
-            for (Integer target_state = 0; target_state < numStates; target_state++) {
+            for (Integer target_state : transMatrix.getKeySet(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state); 
                 
-                if ((match_token != null) && (!move_states.containsKey(target_state))) {
+                if (!move_states.containsKey(target_state)) {
                     // just comment out this IF block and its contents if backrefs blow everything up
                     if(match_token.isBackReference()){
                         process_backreference(current_state, target_state, 
@@ -179,7 +175,7 @@ class NFASimulator {
             backref_string_trans_table = transMatrix.get_new_table_with_expanded_backref(backref_string_trans_table, current_state, target_state);
             target_state_obj = new Path_to_State(current_state_object);
 
-            Map<Integer, Path_to_State> backref_states = new HashMap<>();
+            Path_to_State_List backref_states = new Path_to_State_List();
             backref_states.put(current_state, target_state_obj);
             backref_states = eclose(backref_string_trans_table, backref_states);
 
@@ -187,7 +183,7 @@ class NFASimulator {
             nfa_stack.push(new_NFA_and_state);
        }
 
-    private Map<Integer, Path_to_State> boundary_close(final Map<Integer, Path_to_State> source_states, int pos) 
+    private Path_to_State_List boundary_close(final Path_to_State_List source_states, int pos) 
             throws MatcherException {
         /* assumes source_states has already been e-closed
            moves to new state based on the boundary at index pos from the string search_string
@@ -195,9 +191,8 @@ class NFASimulator {
         */
         Stack<Integer> boundary_stack = new Stack<>();
         Stack<Path_to_State> boundary_stack_objects = new Stack<>();
-        Map<Integer, Path_to_State> move_states = new HashMap<>();
+        Path_to_State_List move_states = new Path_to_State_List();
         Path_to_State current_state_obj;
-        int numStates = transMatrix.getNumStates();
         
         Matchable match_token;
         boolean found_boundary_token;
@@ -220,10 +215,10 @@ class NFASimulator {
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for boundary transitions
-            for (int target_state = 0; target_state < numStates; target_state++) {
+            for (Integer target_state : transMatrix.getKeySet(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
 
-                if ((match_token != null) && (match_token.isBoundaryOrLookaround())) {
+                if (match_token.isBoundaryOrLookaround()){
                     found_boundary_token = true;
                     /* found a boundary token
                      * so make the transitions it produces
@@ -250,14 +245,12 @@ class NFASimulator {
         return eclose(transMatrix, move_states);
     }    
 
-    private Map<Integer, Path_to_State> eclose(TransitionTable transition_table, 
-            final Map<Integer, Path_to_State> initial_states) {
+    private Path_to_State_List eclose(TransitionTable transition_table, 
+            final Path_to_State_List initial_states) {
         Stack<Integer> eclose_stack = new Stack<>();
 
-        Map<Integer, Path_to_State> eclose_map = new HashMap<>();
+        Path_to_State_List eclose_map = new Path_to_State_List();
         int current_state;
-        int numStates = transition_table.getNumStates();
-        
         Path_to_State target_state_obj;
         
         if (initial_states == null) {
@@ -275,12 +268,10 @@ class NFASimulator {
             // pop the state ID and the state object associated with it
             current_state = eclose_stack.pop();
             
-            for (int target_state = 0; 
-                    target_state < numStates; target_state++) {
-                if (transition_table.getTransition(current_state, target_state) != null) {
+            for (int target_state: transition_table.getKeySet(current_state))                 
                     if ((transition_table. getTransition(current_state, target_state).isEpsilon()) 
                             && (!eclose_map.containsKey(target_state))) {
-                        /* IF we got here, target_state is reachable from current state via e-transition
+                        /* If we got here, target_state is reachable from current state via e-transition
                            if target_state has already been reached by another path
                            no need to add it to the eclose_map again
                         */
@@ -292,13 +283,12 @@ class NFASimulator {
                         /* push the newly reached target state on the stack
                         so we can look for e-transitions from that state in the 
                         next iteration of the while loop
-                        */
-                        // add the target state and it's associated state object
-                        // to the map that will be returned
+                        
+                         add the target state and it's associated state object
+                         to the map that will be returned
+                         */
                         eclose_map.put(target_state, target_state_obj);
-                    }
-                }
-            }
+                    }                           
         }
       return eclose_map;
     }
