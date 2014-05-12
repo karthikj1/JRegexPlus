@@ -126,7 +126,34 @@ class Path_to_State {
     }
    
     int resultStringLength(){
+        if(startIndex == -1 || endIndex == -1)
+            return 0;
+        
         return endIndex - startIndex + 1;
+    }
+    
+    public boolean equals(Path_to_State obj2){
+        if((obj2.startIndex != startIndex) || (obj2.endIndex != endIndex))
+            return false;
+        
+        // both objects have same number of characters in their path at same locations
+        // so see if the path(i.e. individual group ID's are also the same for every character
+        List<Integer> char_group, obj2_char_group;
+        for(int r = 0; r < GroupIDList.size(); r++){
+            char_group = GroupIDList.get(r);
+            obj2_char_group = obj2.GroupIDList.get(r);
+            
+            if (char_group.size() != obj2_char_group.size())
+                return false;
+            // sizes are same so check that each character has the same group ID's
+            // this should really be done with a sorted list so that order is not important
+            for(int i = 0; i < char_group.size(); i++)
+                if(char_group.get(i) != obj2_char_group.get(i))
+                    return false;
+        }
+        
+        return true;
+            
     }
     
 }

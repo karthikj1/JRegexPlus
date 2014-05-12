@@ -75,9 +75,7 @@ class TransitionTable implements Cloneable
        
        start = 0;
        finish = 1;
-       setTransition(0, 1, token);
-       setTransition(1, 1, eps);
-       
+       setTransition(0, 1, token);       
        return this;
     }
     
@@ -90,9 +88,6 @@ class TransitionTable implements Cloneable
         int oldFinish = getFinish();
         int n2Start = n2.getStart();
         int oldn2finish = n2.getFinish();
-
-        removeTransition(oldFinish, oldFinish);
-        n2.removeTransition(oldn2finish, oldn2finish);
 
         expand_table(n2States - 1);
         // clone matrix from TransitionTable n2 to new matrix
@@ -163,7 +158,6 @@ class TransitionTable implements Cloneable
                     setTransition(starting_num_states - 1 + i, starting_num_states - 1 + j, token);
                 }
 
-        //    setTransition(oldFinish, n2.getStart() + starting_num_states , eps);
         if (oldn2finish < n2Start)
             finish = starting_num_states + oldn2finish;
 
@@ -173,7 +167,6 @@ class TransitionTable implements Cloneable
         if (oldn2finish == n2Start)
             finish = oldFinish;
 
-        setTransition(finish, finish, eps);
         return this;
         }
     
@@ -182,13 +175,8 @@ class TransitionTable implements Cloneable
         
         int starting_num_states = getNumStates();
         int n2States = n2.getNumStates();
-/*        int oldFinish = getFinish();
-        int oldStart = getStart();
-        removeTransition(oldFinish, oldFinish);
-*/        n2.removeTransition(n2.getFinish(), n2.getFinish());
   
         // clone matrix from TransitionTable n2 to new matrix
-     //   expand_table(n2States + 2);
         expand_table(n2States);
         for(int i = 0; i < n2States; i++)
             for(int j : n2.getKeySet(i)){
@@ -197,17 +185,11 @@ class TransitionTable implements Cloneable
             }
           
         // set e-transitions for new start state
-     /*   start = getNumStates() - 2;
-          setTransition(start, oldStart, eps);
-       */ setTransition(start, n2.getStart() + starting_num_states, eps);        
+         setTransition(start, n2.getStart() + starting_num_states, eps);        
         
       // set e-transition to go to new finish state
-    /*    finish = getNumStates() - 1;
-          setTransition(oldFinish,finish, eps);        
-     */   setTransition(n2.getFinish() + starting_num_states, finish, eps);     
-          
-  //      setTransition(finish, finish, eps);
-        
+         setTransition(n2.getFinish() + starting_num_states, finish, eps);     
+                
         return this;
     }
     
@@ -232,7 +214,6 @@ class TransitionTable implements Cloneable
     TransitionTable question(){
         
         int oldFinish = getFinish();
-        removeTransition(oldFinish, oldFinish);
         
         expand_table(1);
         finish = getNumStates() - 1;
@@ -242,7 +223,6 @@ class TransitionTable implements Cloneable
         
         // set e-transition to go to new finish state
         setTransition(oldFinish, finish, eps);    
-        setTransition(finish, finish, eps);        
                         
         return this;
     }
@@ -285,7 +265,6 @@ class TransitionTable implements Cloneable
             setTransition(getFinish(), brace_finish, eps);
         }
         finish = brace_finish;
-        setTransition(finish, finish, eps);
         return this;
     }
    
@@ -340,7 +319,6 @@ class TransitionTable implements Cloneable
                 
         transposeMatrix.start = this.getFinish();
         transposeMatrix.finish = this.getStart();
-        transposeMatrix.setTransition(transposeMatrix.finish, transposeMatrix.finish, transposeMatrix.eps);
         
         return transposeMatrix;
         }
