@@ -32,7 +32,7 @@ public class Pattern {
     private RegexToken[] tokens;
     private int tokCtr;
     private Stack<Tree<RegexToken>> debug_tree_stack;  // used only in debugging
-    private Stack<TransitionTable> matcherStack;
+    private Stack<TransitionTable> matcherStack;    
     
     private static boolean LOG = false;
     private static boolean debug_create_tree = false;  // enables debug tree creation when true

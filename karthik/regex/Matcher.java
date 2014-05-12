@@ -15,13 +15,15 @@ import java.util.List;
  */
 public class Matcher {
     
-    private final NFASimulator transitions;
+    private final NFASimulator_withbackref transitions;
     private List<Integer[][]> results;    
     private CharSequence search_string;
     
     Matcher(TransitionTable m){
-                        
-        transitions = new NFASimulator(m);                
+        
+        if(m.contains_backref())
+            System.out.println("Contains backref");
+        transitions = new NFASimulator_withbackref(m);                
         results = new ArrayList<>();
     }
 

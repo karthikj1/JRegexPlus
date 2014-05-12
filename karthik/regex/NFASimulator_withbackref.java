@@ -14,7 +14,7 @@ import karthik.regex.dataStructures.Stack;
  *
  * @author karthik
  */
-class NFASimulator {
+class NFASimulator_withbackref {
     private int finish;
     private TransitionTable original_start_table;    
     private TransitionTable transMatrix;
@@ -23,7 +23,7 @@ class NFASimulator {
     private String search_string;       
     private Stack<NFA_StateObject> nfa_stack;
     
-    NFASimulator(TransitionTable start_nfa){
+    NFASimulator_withbackref(TransitionTable start_nfa){
         original_start_table = start_nfa;
     }
     

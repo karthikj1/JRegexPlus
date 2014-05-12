@@ -18,7 +18,8 @@ import java.util.Set;
 class TransitionTable implements Cloneable
     {
     private int start, finish;
-    private final EpsClass eps = EpsClass.getEpsClass();    
+    private final EpsClass eps = EpsClass.getEpsClass(); 
+    private boolean contains_backref = false;
 
     private List<Map<Integer, Matchable>> trans_table_list = new ArrayList<>();
 
@@ -29,6 +30,7 @@ class TransitionTable implements Cloneable
     TransitionTable(Matchable token)
         {
             elementary(token);
+            contains_backref = token.isBackReference();
         }
         
        int getStart() {
@@ -88,6 +90,7 @@ class TransitionTable implements Cloneable
         int oldFinish = getFinish();
         int n2Start = n2.getStart();
         int oldn2finish = n2.getFinish();
+        contains_backref = contains_backref | n2.contains_backref;
 
         expand_table(n2States - 1);
         // clone matrix from TransitionTable n2 to new matrix
@@ -175,6 +178,7 @@ class TransitionTable implements Cloneable
         
         int starting_num_states = getNumStates();
         int n2States = n2.getNumStates();
+        contains_backref = contains_backref | n2.contains_backref;
   
         // clone matrix from TransitionTable n2 to new matrix
         expand_table(n2States);
@@ -319,6 +323,7 @@ class TransitionTable implements Cloneable
                 
         transposeMatrix.start = this.getFinish();
         transposeMatrix.finish = this.getStart();
+        transposeMatrix.contains_backref = this.contains_backref;
         
         return transposeMatrix;
         }
@@ -332,6 +337,7 @@ class TransitionTable implements Cloneable
             newTable.start = start;
             newTable.finish = finish;
             newTable.trans_table_list = new ArrayList<>();
+            newTable.contains_backref = contains_backref;
             
             int numStates = getNumStates();
             newTable.expand_table(numStates);
@@ -374,6 +380,11 @@ class TransitionTable implements Cloneable
             }
         return sb.toString();
 
+        }
+
+    boolean contains_backref()
+        {
+        return contains_backref;
         }
 
     }
