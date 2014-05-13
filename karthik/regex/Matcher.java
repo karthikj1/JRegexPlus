@@ -48,9 +48,12 @@ public class Matcher {
         
         int startPos = 0;
         do{
+//            System.out.println("Calling with start pos = " + startPos);
+//            Path_to_State.debug_numPathtoStates = 0;
             result = transitions.findOneMatch(search_string, startPos, end);
+//            System.out.println("Num objects created = " + Path_to_State.debug_numPathtoStates);
             if (result == null) {
-                startPos++;
+                startPos++;                
             } else {                
                                 
                 results.add(result.get_matches_from_state());

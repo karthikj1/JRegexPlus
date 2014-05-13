@@ -169,7 +169,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             if (backref_indices[0] != -1)
                 {
                 match_string = search_string.substring(backref_indices[0], backref_indices[1] + 1);
-                backref_string_trans_table = Pattern.get_trans_table(match_string, backref_token.getGroupID());
+                backref_string_trans_table = new TransitionTable(match_string, backref_token.getGroupID());
                 }
 
             backref_string_trans_table = transMatrix.get_new_table_with_expanded_backref(backref_string_trans_table, current_state, target_state);

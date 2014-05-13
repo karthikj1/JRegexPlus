@@ -32,6 +32,27 @@ class TransitionTable implements Cloneable
             elementary(token);
             contains_backref = token.isBackReference();
         }
+    
+    TransitionTable(String match_string, List<Integer> groupIDList){
+        // creates transition table to match match_string
+        // used to create table quickly when matching backreferences
+        // since we don't need to go through the full Pattern.compile process for a simple text string
+        RegexToken token;
+        Map<Integer, Matchable> m;
+        contains_backref = false;
+        int len = match_string.length();
+                
+        for(int r = 0; r < len; r++){
+            token = new RegexToken(RegexTokenNames.CHAR, match_string.charAt(r));
+            token.addGroupIDList(groupIDList);
+            m = new HashMap<>();
+            m.put(r + 1, token);
+            trans_table_list.add(m);
+        }
+        trans_table_list.add(new HashMap<Integer, Matchable>());  // add the empty finish state
+        start = 0;
+        finish = len;
+    }
         
        int getStart() {
         return start;
@@ -280,7 +301,6 @@ class TransitionTable implements Cloneable
         
         int n1States = getNumStates();
         int n2States = backref_table.getNumStates(); 
-        backref_table.removeTransition(backref_table.getFinish(), backref_table.getFinish());
         
         newNFAStates = n1States + n2States;
         TransitionTable newTransMatrix = new TransitionTable(newNFAStates);
@@ -328,6 +348,7 @@ class TransitionTable implements Cloneable
         return transposeMatrix;
         }
 
+    
     public TransitionTable clone()
         {
         Matchable token;
