@@ -229,7 +229,7 @@ class Enhanced_NFASimulator extends NFASimulator{
 
                         // add transition produced by boundary token
                         boundary_stack.push(target_state);
-                        boundary_stack_objects.push(new Path_to_State(current_state_obj));
+                        boundary_stack_objects.push(current_state_obj);
 
                     } // if match_token matches current character
 
@@ -252,8 +252,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         Stack<Integer> eclose_stack = new Stack<>();
 
         Enhanced_Path_to_State_List eclose_map = new Enhanced_Path_to_State_List();
-        int current_state;
-        Path_to_State target_state_obj;
+        int current_state;        
         List<Path_to_State> current_stateobj_list;
         
         if (initial_states == null) {
@@ -286,12 +285,12 @@ class Enhanced_NFASimulator extends NFASimulator{
                         // when we put the target_state back in eclose_map
                         current_stateobj_list = new ArrayList<>(eclose_map.get(current_state));
                         for(Path_to_State current_state_obj : current_stateobj_list){
-                            target_state_obj = new Path_to_State(current_state_obj);
+                          //  target_state_obj = new Path_to_State(current_state_obj);
                         /* push the newly reached target state on the stack
                         so we can look for e-transitions from that state in the 
                         next iteration of the while loop
                         */
-                            eclose_map.putUnique(target_state, target_state_obj);
+                            eclose_map.putUnique(target_state, current_state_obj);
                         /*
                          add the target state and it's associated state object
                          to the map that will be returned

@@ -195,7 +195,7 @@ class NFASimulator {
 
                         // add transition produced by boundary token
                         boundary_stack.push(target_state);
-                        boundary_stack_objects.push(new Path_to_State(current_state_obj));
+                        boundary_stack_objects.push(current_state_obj);
 
                     } // if match_token matches current character
 
@@ -244,9 +244,6 @@ class NFASimulator {
                            no need to add it to the eclose_map again
                         */
                         
-                        /* make a clone of the state object so we don't end up with 
-                          multiple references to the same object */
-                        target_state_obj = new Path_to_State(eclose_map.get(current_state));
                         eclose_stack.push(target_state);
                         /* push the newly reached target state on the stack
                         so we can look for e-transitions from that state in the 
@@ -255,6 +252,7 @@ class NFASimulator {
                          add the target state and it's associated state object
                          to the map that will be returned
                          */
+                        target_state_obj = eclose_map.get(current_state);
                         eclose_map.put(target_state, target_state_obj);
                     }                           
         }
