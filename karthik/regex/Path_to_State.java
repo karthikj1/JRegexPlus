@@ -26,9 +26,9 @@ class Path_to_State {
      *******************************/
     static long debug_numPathtoStates = 0;
     private Map<Integer, Integer[]> Group_locations;
-    private int startIndex = -1;
-    private int endIndex = -1;
-    private int max_group_num = -1;
+    private Integer startIndex = -1;
+    private Integer endIndex = -1;
+    private Integer max_group_num = -1;
 
     Path_to_State() {
         Group_locations = new HashMap<>();
@@ -51,7 +51,7 @@ class Path_to_State {
          this.max_group_num = copyObj.max_group_num;
     }
 
-    void append(final int index, final List<Integer> groupID)
+    void append(final Integer index, final List<Integer> groupID)
         {
         Integer[] tempArray;        
         // first update global start and end index
@@ -95,9 +95,9 @@ class Path_to_State {
             return returnArray;
         }
         
-           // copy values from map to int matrix and return it
+           // copy values from map to Integer matrix and return it
             returnArray = new Integer[max_group_num + 1][2];
-            for(int r = 0; r <= max_group_num; r++){
+            for(Integer r = 0; r <= max_group_num; r++){
                 tempArray = Group_locations.get(r);
                 if(tempArray == null)
                     returnArray[r] = empty_string_array;
@@ -109,7 +109,7 @@ class Path_to_State {
             return returnArray;
     }
     
-    Integer[] get_match_for_group(int group_num){
+    Integer[] get_match_for_group(Integer group_num){
         // used to match backreferences - finds the start and end index 
         // for the string matched so far by a given group
         // returns -1 in each element of the array if no match for that group
@@ -136,20 +136,25 @@ class Path_to_State {
     }
     
     public boolean equals(Path_to_State obj2){
+        // first check if obj2 references the same object as this
+        if(obj2 == this)
+            return true;
+        
         if((obj2.startIndex != startIndex) || (obj2.endIndex != endIndex))
             return false;
         
         if(obj2.max_group_num != this.max_group_num)
             return false;
         
-        Integer[][] obj2_matches = obj2.get_matches_from_state();
-        Integer[][] matches = this.get_matches_from_state();
-        
-        for(int r = 0; r < matches.length; r++)
-            if((matches[r][0] != obj2_matches[r][0]) || (matches[r][1] != obj2_matches[r][1]))
+        for (Integer group_num = 1; group_num < max_group_num; group_num++)
+            {
+            Integer[] obj2_indices = obj2.get_match_for_group(group_num);
+            Integer[] indices = this.get_match_for_group(group_num);
+
+            if ((indices[0] != obj2_indices[0]) || (indices[1] != obj2_indices[1]))
                 return false;
+            }
         
-        return true;
-        }
-        
+            return true;            
     }
+}

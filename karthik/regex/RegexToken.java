@@ -44,9 +44,11 @@ class RegexToken implements Matchable{
     
     
     List<Integer> addGroupIDList(List<Integer> newGroupID) {
-        for(Integer i: newGroupID)
-            if(!groupIDList.contains(i))
-                groupIDList.add(i);
+   //     for(Integer i: newGroupID)
+   //             groupIDList.add(i);
+        
+        groupIDList = newGroupID;
+  
         return groupIDList;
     }
 

@@ -38,7 +38,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         
     }
    
-    Path_to_State findOneMatch(CharSequence s, int start, int end) throws MatcherException
+    Path_to_State findOneMatch(CharSequence s, Integer start, Integer end) throws MatcherException
     {
         
         Path_to_State longest_success = null;       
@@ -52,7 +52,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         nfa_stack.push(original_nfa);
         
         search_string = s.toString();
-        int ctr = start;
+        Integer ctr = start;
         
         while (ctr < end)
             {                      
@@ -118,7 +118,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         }
     
 
-   private Enhanced_Path_to_State_List move(final Enhanced_Path_to_State_List source_states, int pos) throws MatcherException{
+   private Enhanced_Path_to_State_List move(final Enhanced_Path_to_State_List source_states, Integer pos) throws MatcherException{
         /* assumes source_states has already been e-closed
            moves to new state based on one character at index pos from the string to match_string
            and returns a new set of states along with their related state objects
@@ -183,7 +183,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             nfa_stack.push(new_NFA_and_state);
        }
 
-    private Enhanced_Path_to_State_List boundary_close(final Enhanced_Path_to_State_List source_states, int pos) 
+    private Enhanced_Path_to_State_List boundary_close(final Enhanced_Path_to_State_List source_states, Integer pos) 
             throws MatcherException {
         /* assumes source_states has already been e-closed
            moves to new state based on the boundary at index pos from the string search_string
@@ -252,7 +252,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         Stack<Integer> eclose_stack = new Stack<>();
 
         Enhanced_Path_to_State_List eclose_map = new Enhanced_Path_to_State_List();
-        int current_state;        
+        Integer current_state;        
         List<Path_to_State> current_stateobj_list;
         
         if (initial_states == null) {
@@ -271,7 +271,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             // pop the state ID and the state object associated with it
             current_state = eclose_stack.pop();
             
-            for (int target_state: transition_table.getKeySet(current_state))                 
+            for (Integer target_state: transition_table.getKeySet(current_state))                 
                     if (transition_table.getTransition(current_state, target_state).isEpsilon()) {
                         /* If we got here, target_state is reachable from current state via e-transition
                            if target_state has already been reached by another path

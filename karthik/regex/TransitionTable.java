@@ -41,15 +41,18 @@ class TransitionTable implements Cloneable
         Map<Integer, Matchable> m;
         contains_backref = false;
         int len = match_string.length();
+        List<Map<Integer, Matchable>> temp_list = new ArrayList<>(len + 1);
+        
                 
         for(int r = 0; r < len; r++){
             token = new RegexToken(RegexTokenNames.CHAR, match_string.charAt(r));
             token.addGroupIDList(groupIDList);
             m = new HashMap<>();
             m.put(r + 1, token);
-            trans_table_list.add(m);
+            temp_list.add(m);
         }
-        trans_table_list.add(new HashMap<Integer, Matchable>());  // add the empty finish state
+        temp_list.add(new HashMap<Integer, Matchable>());  // add the empty finish state
+        trans_table_list = temp_list;
         start = 0;
         finish = len;
     }
@@ -84,6 +87,8 @@ class TransitionTable implements Cloneable
     }
     
     private void expand_table(int num_states_to_add){
+        //trans_table_list.ensureCapacity(num_states_to_add);
+        
         for(int r = 0; r < num_states_to_add; r++)
             trans_table_list.add(new HashMap<Integer, Matchable>());
     }
@@ -264,8 +269,7 @@ class TransitionTable implements Cloneable
             
         if(min == 0)
            question();
-        temp = this.clone();   
-        temp.removeTransition(temp.getFinish(), temp.getFinish());
+        temp = this.clone();           
         
         for(int r = 2; r < min; r++)
             concat(temp);        

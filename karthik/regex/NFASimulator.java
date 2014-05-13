@@ -13,7 +13,7 @@ import karthik.regex.dataStructures.Stack;
  * @author karthik
  */
 class NFASimulator {
-    protected int finish;
+    protected Integer finish;
     protected TransitionTable original_start_table;    
     protected TransitionTable transMatrix;
     protected CharSequence regex_string = "";
@@ -44,7 +44,7 @@ class NFASimulator {
         
     }
    
-    Path_to_State findOneMatch(CharSequence s, int start, int end) throws MatcherException
+    Path_to_State findOneMatch(CharSequence s, Integer start, Integer end) throws MatcherException
     {
         
         Path_to_State longest_success = null;       
@@ -58,7 +58,7 @@ class NFASimulator {
         nfa_stack.push(original_nfa);
         
         search_string = s.toString();
-        int ctr = start;
+        Integer ctr = start;
         
         while (ctr < end)
             {                      
@@ -121,7 +121,7 @@ class NFASimulator {
         }
     
 
-   private Path_to_State_List move(final Path_to_State_List source_states, int pos) throws MatcherException{
+   private Path_to_State_List move(final Path_to_State_List source_states, Integer pos) throws MatcherException{
         /* assumes source_states has already been e-closed
            moves to new state based on one character at index pos from the string to match_string
            and returns a new set of states along with their related state objects
@@ -151,7 +151,7 @@ class NFASimulator {
         return eclose(transMatrix, move_states);
     }
 
-    private Path_to_State_List boundary_close(final Path_to_State_List source_states, int pos) 
+    private Path_to_State_List boundary_close(final Path_to_State_List source_states, Integer pos) 
             throws MatcherException {
         /* assumes source_states has already been e-closed
            moves to new state based on the boundary at index pos from the string search_string
@@ -218,7 +218,7 @@ class NFASimulator {
         Stack<Integer> eclose_stack = new Stack<>();
 
         Path_to_State_List eclose_map = new Path_to_State_List();
-        int current_state;
+        Integer current_state;
         Path_to_State target_state_obj;
         
         if (initial_states == null) {
@@ -236,7 +236,7 @@ class NFASimulator {
             // pop the state ID and the state object associated with it
             current_state = eclose_stack.pop();
             
-            for (int target_state: transition_table.getKeySet(current_state))                 
+            for (Integer target_state: transition_table.getKeySet(current_state))                 
                     if ((transition_table. getTransition(current_state, target_state).isEpsilon()) 
                             && (!eclose_map.containsKey(target_state))) {
                         /* If we got here, target_state is reachable from current state via e-transition
