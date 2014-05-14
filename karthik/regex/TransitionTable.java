@@ -33,7 +33,13 @@ class TransitionTable implements Cloneable
             contains_backref = token.isBackReference();
         }
     
-    TransitionTable(String match_string, List<Integer> groupIDList, TransitionTable parent_table, 
+    static TransitionTable get_expanded_backref_table(String match_string, List<Integer> groupIDList, TransitionTable parent_table, 
+            int backref_token_row, int backref_token_col){
+        
+        return new TransitionTable(match_string, groupIDList, parent_table, backref_token_row, backref_token_col);
+    }
+    
+    private TransitionTable(String match_string, List<Integer> groupIDList, TransitionTable parent_table, 
             int backref_token_row, int backref_token_col){
         // creates transition table to match match_string
         // used to create table quickly when matching backreferences

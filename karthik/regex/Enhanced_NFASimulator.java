@@ -22,6 +22,7 @@ class Enhanced_NFASimulator extends NFASimulator{
     // otherwise NFA_Simulator is used which runs a bit quicker
          
     private Stack<EnhancedNFA_StateObject> nfa_stack;
+    private Stack<Integer> eclose_stack = new Stack<>();
     
     Enhanced_NFASimulator(TransitionTable start_nfa){
         super(start_nfa);
@@ -126,11 +127,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         */
         Enhanced_Path_to_State_List move_states = new Enhanced_Path_to_State_List();
         Path_to_State target_state_obj;
-        Matchable match_token;             
-        
-        if (source_states == null) {
-            return null;
-        }
+        Matchable match_token;                     
         
         for (Integer current_state : source_states.keySet()) {
             for (Integer target_state : transMatrix.getKeySet(current_state)) {
@@ -161,7 +158,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             final Path_to_State current_state_object, final Matchable match_token) throws MatcherException
         {
 
-        TransitionTable backref_string_trans_table = new TransitionTable(EpsClass.getEpsClass());
+        
         BackReferenceRegexToken backref_token = (BackReferenceRegexToken) match_token;
         Path_to_State target_state_obj;
 
@@ -187,7 +184,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         if(!peekahead.equals(match_string))
             return;
         
-        backref_string_trans_table = new TransitionTable(match_string, backref_token.getGroupID(),
+        TransitionTable backref_string_trans_table = TransitionTable.get_expanded_backref_table(match_string, backref_token.getGroupID(),
                 transMatrix, current_state, target_state);
 
         target_state_obj = new Path_to_State(current_state_object);
@@ -211,18 +208,12 @@ class Enhanced_NFASimulator extends NFASimulator{
            moves to new state based on the boundary at index string_index from the string search_string
            and returns a new set of states along with their related state objects
         */
-        Stack<Integer> boundary_stack = new Stack<>();
-        Stack<Path_to_State> boundary_stack_objects = new Stack<>();
         Enhanced_Path_to_State_List move_states = new Enhanced_Path_to_State_List();
         Path_to_State current_state_obj;
         
         Matchable match_token;
         boolean found_boundary_token;
         Integer current_state;
-        
-        if (source_states == null) {
-            return null;
-        }
         
         for (Integer stateID : source_states.keySet()) {
             /* take each initial_states in the provided initial states and
@@ -270,22 +261,18 @@ class Enhanced_NFASimulator extends NFASimulator{
     }    
 
     private Enhanced_Path_to_State_List eclose(TransitionTable transition_table, 
-            final Enhanced_Path_to_State_List initial_states) {
-        Stack<Integer> eclose_stack = new Stack<>();
+            final Enhanced_Path_to_State_List current_states) {        
 
         Enhanced_Path_to_State_List eclose_map = new Enhanced_Path_to_State_List();
         Integer current_state;        
         List<Path_to_State> current_stateobj_list;
         
-        if (initial_states == null) {
-            return null;
-        }
-        for (Integer stateID : initial_states.keySet()) {
-            /* take each initial_states in the provided initial states and
+        for (Integer stateID : current_states.keySet()) {
+            /* take each current_states in the provided initial states and
             push it on a stack
             */
             eclose_stack.push(stateID);
-            for(Path_to_State initial_state_obj : initial_states.get(stateID))
+            for(Path_to_State initial_state_obj : current_states.get(stateID))
                 eclose_map.put(stateID, initial_state_obj);
         }
         
