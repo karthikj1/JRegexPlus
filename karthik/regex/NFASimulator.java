@@ -17,8 +17,10 @@ class NFASimulator {
     protected TransitionTable original_start_table;    
     protected TransitionTable transMatrix;
     protected CharSequence regex_string = "";
+    protected Integer string_index; // global pointer that keeps track of our position in the search string
     
     protected String search_string;       
+    protected Integer region_start, region_end;
     private Stack<NFA_StateObject> nfa_stack;
     
     NFASimulator(TransitionTable start_nfa){
@@ -58,9 +60,10 @@ class NFASimulator {
         nfa_stack.push(original_nfa);
         
         search_string = s.toString();
-        Integer ctr = start;
+        string_index = region_start = start;
+        region_end = end;
         
-        while (ctr < end)
+        while (string_index < end)
             {                      
           while(!nfa_stack.isEmpty())
               {
@@ -70,16 +73,16 @@ class NFASimulator {
                 finish = transMatrix.getFinish();        
                 
                   // first check boundary if there are any boundary tokens
-                  states = boundary_close(states, ctr);
+                  states = boundary_close(states);
                    longest_success = get_longest_success(states, longest_success); 
                 // now actually read the current character
-                states = move(states, ctr);
+                states = move(states);
                 longest_success = get_longest_success(states, longest_success);
                 current_nfa.states = states;
                 if(!states.isEmpty())
                     temp_stack.push(current_nfa);
                 }
-            ctr++;      
+            string_index++;      
             while(!temp_stack.isEmpty())
                 nfa_stack.push(temp_stack.pop());
             }
@@ -97,7 +100,7 @@ class NFASimulator {
                 finish = transMatrix.getFinish();        
           
             // capture successes if any
-              states = boundary_close(states, ctr);  
+              states = boundary_close(states);  
               longest_success = get_longest_success(states, longest_success);
               }       
         return longest_success;   
@@ -121,9 +124,9 @@ class NFASimulator {
         }
     
 
-   private Path_to_State_List move(final Path_to_State_List source_states, Integer pos) throws MatcherException{
+   private Path_to_State_List move(final Path_to_State_List source_states) throws MatcherException{
         /* assumes source_states has already been e-closed
-           moves to new state based on one character at index pos from the string to match_string
+           moves to new state based on one character at index string_index from the string to match_string
            and returns a new set of states along with their related state objects
         */
         Path_to_State_List move_states = new Path_to_State_List();
@@ -139,9 +142,9 @@ class NFASimulator {
                 match_token = transMatrix.getTransition(current_state, target_state); 
                 
                 if (!move_states.containsKey(target_state)) {                      
-                    if ((!match_token.isBoundaryOrLookaround()) && match_token.matches(search_string, pos)) {
+                    if ((!match_token.isBoundaryOrLookaround()) && match_token.matches(search_string, string_index)) {
                         target_state_obj = new Path_to_State(source_states.get(current_state));
-                        target_state_obj.append(pos, match_token.getGroupID());
+                        target_state_obj.append(string_index, match_token.getGroupID());
                         move_states.put(target_state, target_state_obj);
                     } // if transitions matches current character
                 } // if transitions != null
@@ -151,10 +154,10 @@ class NFASimulator {
         return eclose(transMatrix, move_states);
     }
 
-    private Path_to_State_List boundary_close(final Path_to_State_List source_states, Integer pos) 
+    private Path_to_State_List boundary_close(final Path_to_State_List source_states) 
             throws MatcherException {
         /* assumes source_states has already been e-closed
-           moves to new state based on the boundary at index pos from the string search_string
+           moves to new state based on the boundary at index string_index from the string search_string
            and returns a new set of states along with their related state objects
         */
         Stack<Integer> boundary_stack = new Stack<>();
@@ -191,7 +194,7 @@ class NFASimulator {
                     /* found a boundary token
                      * so make the transitions it produces
                      */
-                    if ((!move_states.containsKey(target_state)) && (match_token.matches(search_string, pos))) {
+                    if ((!move_states.containsKey(target_state)) && (match_token.matches(search_string, string_index))) {
 
                         // add transition produced by boundary token
                         boundary_stack.push(target_state);

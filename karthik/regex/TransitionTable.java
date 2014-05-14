@@ -33,7 +33,8 @@ class TransitionTable implements Cloneable
             contains_backref = token.isBackReference();
         }
     
-    TransitionTable(String match_string, List<Integer> groupIDList){
+    TransitionTable(String match_string, List<Integer> groupIDList, TransitionTable parent_table, 
+            int backref_token_row, int backref_token_col){
         // creates transition table to match match_string
         // used to create table quickly when matching backreferences
         // since we don't need to go through the full Pattern.compile process for a simple text string
@@ -55,6 +56,8 @@ class TransitionTable implements Cloneable
         trans_table_list = temp_list;
         start = 0;
         finish = len;
+        
+        insert_in_parent_table(parent_table, backref_token_row, backref_token_col);
     }
         
        int getStart() {
@@ -297,38 +300,32 @@ class TransitionTable implements Cloneable
         return this;
     }
    
-    TransitionTable get_new_table_with_expanded_backref(final TransitionTable backref_table, 
+    private TransitionTable insert_in_parent_table(TransitionTable parent_table, 
             int backref_token_row, int backref_token_col){    
         
-        int newNFAStates;
         Matchable token;
         
-        int n1States = getNumStates();
-        int n2States = backref_table.getNumStates(); 
-        
-        newNFAStates = n1States + n2States;
-        TransitionTable newTransMatrix = new TransitionTable(newNFAStates);
-        newTransMatrix.start = start;
-        newTransMatrix.finish = finish;
+        int n1States = parent_table.getNumStates();
+        int backref_states = getNumStates(); 
                 
-        // copy matrix from TransitionTable in <this> object to new matrix
+        expand_table(n1States);
+        contains_backref = parent_table.contains_backref();
+                
+        // copy matrix from TransitionTable in parent_table to this matrix
         for(int i = 0; i < n1States; i++)
-            for(int j : getKeySet(i)){
-                token = getTransition(i,j);                
-                newTransMatrix.setTransition(i,j,token);             
+            for(int j : parent_table.getKeySet(i)){
+                token = parent_table.getTransition(i,j);                
+                setTransition(i + backref_states,j + backref_states,token);             
             }
-        // copy matrix from TransitionTable backref_table to new matrix
-        for(int i = 0; i < n2States; i++)
-            for(int j : backref_table.getKeySet(i)){
-                token = backref_table.getTransition(i,j);                
-                newTransMatrix.setTransition(n1States + i, n1States + j, token);
-            }
+     
+        removeTransition(backref_token_row + backref_states, backref_token_col + backref_states);
+        setTransition(backref_token_row + backref_states, start, eps);
+        setTransition(finish, backref_token_col + backref_states, eps);
         
-        newTransMatrix.removeTransition(backref_token_row, backref_token_col);
-        newTransMatrix.setTransition(backref_token_row, n1States, newTransMatrix.eps);
-        newTransMatrix.setTransition(n1States + backref_table.getFinish(), backref_token_col, newTransMatrix.eps);
+        start = parent_table.start + backref_states;
+        finish = parent_table.finish + backref_states;
         
-        return newTransMatrix;
+        return this;
     }
    
 
