@@ -48,7 +48,7 @@ public class LookbehindRegexToken extends RegexToken
        /* uses the property that if a regex matches a string, the reversed regex matches the reversed string
         * the regex is reversed by doing a matrix get_transposed_table of the original regex's transition matrix
         * this newly created transition matrix is then used to create a matcher
-        * finally, this matcher searches the reversed string to look for a match
+        * finally, this matcher searches the reversed string to look for a find
         */
         
         //   System.out.println("\r\nMatching lookbehind for " + search_string.toString().substring(pos, search_string.length()));

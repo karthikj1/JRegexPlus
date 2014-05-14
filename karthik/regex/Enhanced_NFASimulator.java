@@ -161,37 +161,49 @@ class Enhanced_NFASimulator extends NFASimulator{
             final Path_to_State current_state_object, final Matchable match_token) throws MatcherException
         {
 
-        String match_string;
         TransitionTable backref_string_trans_table = new TransitionTable(EpsClass.getEpsClass());
         BackReferenceRegexToken backref_token = (BackReferenceRegexToken) match_token;
         Path_to_State target_state_obj;
-        int backref_length, remaining_string_length;
-                
+
         Integer[] backref_indices = current_state_object.get_match_for_group(backref_token.getBackRefID());
-        backref_length = backref_indices[1] - backref_indices[0] + 1;
-        remaining_string_length = region_end - string_index + 1;
+
+        if (backref_indices[0] == -1)  // backref group was empty
+            return;
+
+        int backref_length = backref_indices[1] - backref_indices[0] + 1;
+        int remaining_string_length = region_end - string_index + 1;
+
         // simple check below to make sure there are enough characters left in the text to match the backreference
         // if not, we can avoid some work
-            if ((backref_indices[0] != -1) && (backref_length <= remaining_string_length))
-                {
-                match_string = search_string.substring(backref_indices[0], backref_indices[1] + 1);
-                backref_string_trans_table = new TransitionTable(match_string, backref_token.getGroupID(),
-                        transMatrix, current_state, target_state);
+        if (backref_length > remaining_string_length)
+            return;
+        
+        // remove this endPeek variable and calculation
+        int endPeek = ((string_index + backref_length) > region_end) ? region_end : (string_index + backref_length);
+        String match_string = search_string.substring(backref_indices[0], backref_indices[1] + 1);
+        String peekahead = search_string.substring(string_index, endPeek);
+        
+        // peek to see if back ref string is in the search string just ahead
+        if(!peekahead.equals(match_string))
+            return;
+        
+        backref_string_trans_table = new TransitionTable(match_string, backref_token.getGroupID(),
+                transMatrix, current_state, target_state);
 
-                target_state_obj = new Path_to_State(current_state_object);
+        target_state_obj = new Path_to_State(current_state_object);
 
-                Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
+        Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
 
-                // not the best solution in line below - need a better way for TransitionTable to signal where the states have been moved around           
-                backref_states.put(0, target_state_obj);
-            // just the above line so that current_state is correct after the table is expanded
+        // not the best solution in line below - need a better way for TransitionTable to signal where the states have been moved around           
+        backref_states.put(0, target_state_obj);
+        // just the above line so that current_state is correct after the table is expanded
 
-                backref_states = eclose(backref_string_trans_table, backref_states);
+        backref_states = eclose(backref_string_trans_table, backref_states);
 
-                EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(backref_string_trans_table, backref_states);
-                nfa_stack.push(new_NFA_and_state);
-                }
-       }
+        EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(backref_string_trans_table, backref_states);
+        nfa_stack.push(new_NFA_and_state);
+
+        }
 
     private Enhanced_Path_to_State_List boundary_close(final Enhanced_Path_to_State_List source_states) 
             throws MatcherException {

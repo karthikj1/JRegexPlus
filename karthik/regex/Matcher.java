@@ -18,6 +18,8 @@ public class Matcher {
     private final NFASimulator transitions;
     private List<Integer[][]> results;    
     private CharSequence search_string;
+    private int startPos;
+    private int region_end;
     
     Matcher(TransitionTable m){
         
@@ -27,54 +29,59 @@ public class Matcher {
             transitions = new NFASimulator(m);
         
         results = new ArrayList<>();
+        startPos = 0;
     }
 
+    public Matcher reset(){        
+        startPos = 0;
+        return this;
+    }
+            
     boolean matchFromStart(final CharSequence s) throws MatcherException{
-        // used to match lookarounds
-        return match(s, true);
+        // used to find lookarounds
+        return find(s, true);
     }
     
-    public boolean match(final CharSequence s) throws MatcherException{
-        return match(s, false);
+    public boolean find(final CharSequence s) throws MatcherException{
+        return find(s, false);
     }
     
-    private boolean match(final CharSequence s, boolean match_from_start) throws MatcherException
+    private boolean find(final CharSequence s, boolean match_from_start) throws MatcherException
         {        
-        Path_to_State result;
-               
-        results.clear();
-        search_string = s;
-        int end = s.length();
+        Path_to_State result;        
         
-        int startPos = 0;
+        results = new ArrayList<>();
+        search_string = s;
+        region_end = s.length();
+        
+        if(match_from_start)
+            startPos = 0;
+        
         do{
-//            System.out.println("Calling with start pos = " + startPos);
-//            Path_to_State.debug_numPathtoStates = 0;
-            result = transitions.findOneMatch(search_string, startPos, end);
-//            System.out.println("Num objects created = " + Path_to_State.debug_numPathtoStates);
+            result = transitions.findOneMatch(search_string, startPos, region_end);
             if (result == null) {
                 startPos++;                
-            } else {                
-                                
-                results.add(result.get_matches_from_state());
-                startPos = startPos + result.resultStringLength();
-                // prevent engine from endless loop if there is a zero-length match
+            } else {                                                
+                results.add(result.get_matches_from_state());                
+                startPos = startPos + result.resultStringLength();                
+                // prevent engine from endless loop if there is a zero-length find
                 if(result.resultStringLength() == 0)
                     startPos++;
+                break;
             }
-        } while ((startPos < end) && (!match_from_start)); 
+        } while ((startPos < region_end) && (!match_from_start)); 
                 
         return (results.size() > 0);
     }
    
     
     public boolean matchEntireString(final String s) throws MatcherException{
-        // fix match function so it doesn't keep trying for matchEntireString case
+        // fix find function so it doesn't keep trying for matchEntireString case
         
-        if(!match(s, true))  // no match found
+        if(!find(s, true))  // no find found
             return false;
         
-        if(group(0,0).equals(s)) // does the match equal the entire search string
+        if(group(0,0).equals(s)) // does the find equal the entire search string
             return true;
         else
             results.clear();
@@ -125,7 +132,7 @@ public class Matcher {
         }
         else
             check_size(0,0);
-        return results.get(index).length - 1; // -1 because group 0 is the entire match               
+        return results.get(index).length - 1; // -1 because group 0 is the entire find               
     }
     
     public int matchCount(){

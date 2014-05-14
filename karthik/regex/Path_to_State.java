@@ -24,7 +24,6 @@ class Path_to_State {
      *  GroupIDList.get(r) contains the list of group ID's for the r'th character 
      *  in the string being matched.        
      *******************************/
-    static long debug_numPathtoStates = 0;
     private Map<Integer, Integer[]> Group_locations;
     private Integer startIndex = -1;
     private Integer endIndex = -1;
@@ -32,12 +31,10 @@ class Path_to_State {
 
     Path_to_State() {
         Group_locations = new HashMap<>();
-        debug_numPathtoStates++;
     }
 
     Path_to_State(Path_to_State copyObj) {
         Integer[] tempArray;
-        debug_numPathtoStates++;
         
         Group_locations = new HashMap<>();
                
