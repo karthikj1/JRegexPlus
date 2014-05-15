@@ -211,22 +211,28 @@ class TransitionTable implements Cloneable
     TransitionTable union(final TransitionTable n2){        
         Matchable token;
         
-        int starting_num_states = getNumStates();
-        int n2States = n2.getNumStates();
+        Integer starting_num_states = getNumStates();
+        Integer n2States = n2.getNumStates();
         contains_backref = contains_backref | n2.contains_backref;
+        Integer oldStart = start;
+        Integer oldFinish = finish;
   
         // clone matrix from TransitionTable n2 to new matrix
-        expand_table(n2States);
-        for(int i = 0; i < n2States; i++)
-            for(int j : n2.getKeySet(i)){
+        expand_table(n2States + 2);
+        for(Integer i = 0; i < n2States; i++)
+            for(Integer j : n2.getKeySet(i)){
                  token = n2.getTransition(i,j);             
                  setTransition(starting_num_states + i, starting_num_states + j,token);
             }
-          
+        
+        start = getNumStates() - 2;
+        finish = getNumStates() - 1;
         // set e-transitions for new start state
+         setTransition(start, oldStart, eps);
          setTransition(start, n2.getStart() + starting_num_states, eps);        
         
       // set e-transition to go to new finish state
+         setTransition(oldFinish, finish, eps);
          setTransition(n2.getFinish() + starting_num_states, finish, eps);     
                 
         return this;
