@@ -143,7 +143,7 @@ class Path_to_State {
         if(obj2.max_group_num != this.max_group_num)
             return false;
         
-        for (Integer group_num = 1; group_num < max_group_num; group_num++)
+        for (Integer group_num = 1; group_num <= max_group_num; group_num++)
             {
             Integer[] obj2_indices = obj2.get_match_for_group(group_num);
             Integer[] indices = this.get_match_for_group(group_num);
