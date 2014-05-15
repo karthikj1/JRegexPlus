@@ -6,7 +6,6 @@
 
 package karthik.regex;
 
-import java.util.ArrayList;
 import java.util.List;
 import karthik.regex.dataStructures.Stack;
 
@@ -22,7 +21,6 @@ class Enhanced_NFASimulator extends NFASimulator{
     // otherwise NFA_Simulator is used which runs a bit quicker
          
     private Stack<EnhancedNFA_StateObject> nfa_stack;
-    private Stack<Integer> eclose_stack = new Stack<>();
     
     Enhanced_NFASimulator(TransitionTable start_nfa){
         super(start_nfa);
@@ -30,12 +28,13 @@ class Enhanced_NFASimulator extends NFASimulator{
     
     private EnhancedNFA_StateObject init_simulator(){
         transMatrix = original_start_table;
-        Enhanced_Path_to_State_List eclosed_start_states = new Enhanced_Path_to_State_List();        
+        Enhanced_Path_to_State_List eclosed_start_states = new Enhanced_Path_to_State_List();  
+        eclose_cache = EClose_Cache.populate_eclose_cache(transMatrix);
         
         Integer start = original_start_table.getStart();
         eclosed_start_states.put(start, new Path_to_State());
-        eclosed_start_states = eclose(transMatrix, eclosed_start_states);        
-        return new EnhancedNFA_StateObject(original_start_table, eclosed_start_states);
+        eclosed_start_states = eclose(eclosed_start_states, eclose_cache);        
+        return new EnhancedNFA_StateObject(original_start_table, eclosed_start_states, eclose_cache);
         
     }
    
@@ -63,6 +62,7 @@ class Enhanced_NFASimulator extends NFASimulator{
                 current_nfa = nfa_stack.pop();
                 transMatrix = current_nfa.trans_table;
                 states = current_nfa.states;
+                eclose_cache = current_nfa.eclose_cache;
                 finish = transMatrix.getFinish();        
                 
                   // first check boundary if there are any boundary tokens
@@ -89,6 +89,7 @@ class Enhanced_NFASimulator extends NFASimulator{
               {
                 current_nfa = nfa_stack.pop();
                 transMatrix = current_nfa.trans_table;
+                eclose_cache = current_nfa.eclose_cache;
                 states = current_nfa.states;
                 finish = transMatrix.getFinish();        
           
@@ -151,7 +152,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             } // for target_state
         } // for current_state
         
-        return eclose(transMatrix, move_states);
+        return eclose(move_states, eclose_cache);
     }
 
     private void process_backreference(Integer current_state, Integer target_state,
@@ -186,19 +187,21 @@ class Enhanced_NFASimulator extends NFASimulator{
         
         TransitionTable backref_string_trans_table = TransitionTable.get_expanded_backref_table(match_string, backref_token.getGroupID(),
                 transMatrix, current_state, target_state);
-
+        
         target_state_obj = new Path_to_State(current_state_object);
-
         Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
 
         // not the best solution in line below - need a better way for TransitionTable to signal where the states have been moved around           
         backref_states.put(0, target_state_obj);
         // just the above line so that current_state is correct after the table is expanded
 
-        backref_states = eclose(backref_string_trans_table, backref_states);
+        // e-close backref_states with the correct eclose cache and then create new NFA object to push on stack 
+        EClose_Cache backref_table_eclose_cache = EClose_Cache.populate_eclose_cache(backref_string_trans_table);        
+        backref_states = eclose(backref_states, backref_table_eclose_cache);
 
-        EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(backref_string_trans_table, backref_states);
-        nfa_stack.push(new_NFA_and_state);
+        EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(backref_string_trans_table, 
+                backref_states, backref_table_eclose_cache);
+        nfa_stack.push(new_NFA_and_state);        
 
         }
 
@@ -257,26 +260,33 @@ class Enhanced_NFASimulator extends NFASimulator{
             
         } // while stack is not empty
 
-        return eclose(transMatrix, move_states);
+        return eclose(move_states, eclose_cache);
     }    
 
-    private Enhanced_Path_to_State_List eclose(TransitionTable transition_table, 
-            final Enhanced_Path_to_State_List current_states) {        
+    private Enhanced_Path_to_State_List eclose(final Enhanced_Path_to_State_List current_states, EClose_Cache cache) {        
 
-        Enhanced_Path_to_State_List eclose_map = new Enhanced_Path_to_State_List();
-        Integer current_state;        
+        Enhanced_Path_to_State_List eclose_map = new Enhanced_Path_to_State_List();        
         List<Path_to_State> current_stateobj_list;
+        Integer[] eps_transitions;
         
         for (Integer stateID : current_states.keySet()) {
             /* take each current_states in the provided initial states and
             push it on a stack
             */
-            eclose_stack.push(stateID);
+            eps_transitions = cache.get_eps_transitions(stateID);
+            
             for(Path_to_State initial_state_obj : current_states.get(stateID))
                 eclose_map.put(stateID, initial_state_obj);
+            
+             current_stateobj_list = current_states.get(stateID);
+           
+             for(Integer target_state: eps_transitions)
+                 for(Path_to_State target_state_obj:current_stateobj_list)
+                   eclose_map.putUnique(target_state, target_state_obj);            
+             
         }
         
-        while (!eclose_stack.isEmpty()) {
+   /*     while (!eclose_stack.isEmpty()) {
             // pop the state ID and the state object associated with it
             current_state = eclose_stack.pop();
             
@@ -286,27 +296,27 @@ class Enhanced_NFASimulator extends NFASimulator{
                            if target_state has already been reached by another path
                            add it to the eclose_map anyway to preserve path information
                         */
-                        eclose_stack.push(target_state);
+             //           eclose_stack.push(target_state);
                         /* make a clone of the state object so we don't end up with 
                           multiple references to the same object */
                          
                         // iterate over a newly created list below to prevent ConcurrentModificationException
                         // when we put the target_state back in eclose_map
-                        current_stateobj_list = new ArrayList<>(eclose_map.get(current_state));
-                        for(Path_to_State current_state_obj : current_stateobj_list){
+             //           current_stateobj_list = new ArrayList<>(eclose_map.get(current_state));
+             //           for(Path_to_State current_state_obj : current_stateobj_list){
                           //  target_state_obj = new Path_to_State(current_state_obj);
                         /* push the newly reached target state on the stack
                         so we can look for e-transitions from that state in the 
                         next iteration of the while loop
                         */
-                            eclose_map.putUnique(target_state, current_state_obj);
+           //                 eclose_map.putUnique(target_state, current_state_obj);
                         /*
                          add the target state and it's associated state object
                          to the map that will be returned
-                         */
+                         
                         }
                     }                           
-        }
+        }*/
       return eclose_map;
     }
  }

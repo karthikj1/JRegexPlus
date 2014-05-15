@@ -6,8 +6,6 @@
 
 package karthik.regex;
 
-import java.util.HashMap;
-import java.util.Map;
 import karthik.regex.dataStructures.Stack;
 
 /**
@@ -26,7 +24,7 @@ class NFASimulator {
         
     protected Stack<Integer> boundary_stack = new Stack<>();
     protected Stack<Path_to_State> boundary_stack_objects = new Stack<>();
-    protected Map<Integer, Integer[]> eclose_cache = new HashMap<>();    
+    protected EClose_Cache eclose_cache;    
     
     NFASimulator(TransitionTable start_nfa){
         original_start_table = start_nfa;
@@ -43,7 +41,7 @@ class NFASimulator {
     private NFA_StateObject init_simulator(){
         transMatrix = original_start_table;
         Path_to_State_List eclosed_start_states = new Path_to_State_List(); 
-        eclose_cache = populate_eclose_cache(transMatrix);
+        eclose_cache = EClose_Cache.populate_eclose_cache(transMatrix);
         
         Integer start = original_start_table.getStart();
         eclosed_start_states.put(start, new Path_to_State());
@@ -206,7 +204,7 @@ class NFASimulator {
             /* take each state in the provided initial states and
             put in the map that will be returned
             */
-            eps_transitions = get_eps_transitions(stateID);
+            eps_transitions = eclose_cache.get_eps_transitions(stateID);
             
             target_state_obj = current_states.get(stateID);
             eclose_map.put(stateID, target_state_obj);
@@ -217,58 +215,6 @@ class NFASimulator {
         return eclose_map;
     }
  
-    protected Integer[] get_eps_transitions(Integer source_state){
-        Integer[] return_array = eclose_cache.get(source_state);
-        
-        return (return_array == null) ? new Integer[0] : return_array;
-    }
-    
-    protected Map<Integer, Integer[]> populate_eclose_cache(TransitionTable transition_table){
-        // e-closes every state in the transition matrix 
-        
-        Integer[] eclose_array_for_one_state;
-        Map<Integer, Integer[]> return_map = new HashMap<>();
-        
-        Integer numStates = transMatrix.getNumStates();
-        for(Integer source_state = 0; source_state < numStates; source_state++){
-            eclose_array_for_one_state = calc_eclose_states(transition_table, source_state);
-            return_map.put(source_state, eclose_array_for_one_state);
-        }        
-        
-        return return_map;
-    }
-    
-    private Integer[] calc_eclose_states(TransitionTable transition_table, 
-            Integer current_state) {        
-
-        Map<Integer, Integer> eclose_map = new HashMap<>();                
-        Stack<Integer> tempStack = new Stack<>();        
-     
-            tempStack.push(current_state);
-            eclose_map.put(current_state, current_state);
-        
-        while (!tempStack.isEmpty()) {
-            // pop the state ID and the state object associated with it
-            current_state = tempStack.pop();
-            
-            for (Integer target_state: transition_table.getKeySet(current_state))                 
-                    if ((transition_table.getTransition(current_state, target_state).isEpsilon()) 
-                            && (!eclose_map.containsKey(target_state))) {
-                        /* If we got here, target_state is reachable from current state via e-transition
-                           if target_state has already been reached, no need to add it to the eclose_map again
-                        */
-                        
-                        tempStack.push(target_state);
-                        /* push the newly reached target state on the stack
-                        so we can look for e-transitions from that state in the 
-                        next iteration of the while loop
-                        
-                        */
-                        eclose_map.put(target_state, target_state);
-                    }                           
-        }
-      return eclose_map.keySet().toArray(new Integer[eclose_map.size()]);
-    }
  
     
     public String toString() {
