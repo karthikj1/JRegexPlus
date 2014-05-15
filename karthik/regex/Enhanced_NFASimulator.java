@@ -29,7 +29,7 @@ class Enhanced_NFASimulator extends NFASimulator{
     private EnhancedNFA_StateObject init_simulator(){
         transMatrix = original_start_table;
         Enhanced_Path_to_State_List eclosed_start_states = new Enhanced_Path_to_State_List();  
-        eclose_cache = EClose_Cache.populate_eclose_cache(transMatrix);
+        eclose_cache = EClose_Cache.create_eclose_cache(transMatrix);
         
         Integer start = original_start_table.getStart();
         eclosed_start_states.put(start, new Path_to_State());
@@ -196,7 +196,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         // just the above line so that current_state is correct after the table is expanded
 
         // e-close backref_states with the correct eclose cache and then create new NFA object to push on stack 
-        EClose_Cache backref_table_eclose_cache = EClose_Cache.populate_eclose_cache(backref_string_trans_table);        
+        EClose_Cache backref_table_eclose_cache = EClose_Cache.create_eclose_cache(backref_string_trans_table);        
         backref_states = eclose(backref_states, backref_table_eclose_cache);
 
         EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(backref_string_trans_table, 
@@ -285,38 +285,6 @@ class Enhanced_NFASimulator extends NFASimulator{
                    eclose_map.putUnique(target_state, target_state_obj);            
              
         }
-        
-   /*     while (!eclose_stack.isEmpty()) {
-            // pop the state ID and the state object associated with it
-            current_state = eclose_stack.pop();
-            
-            for (Integer target_state: transition_table.getKeySet(current_state))                 
-                    if (transition_table.getTransition(current_state, target_state).isEpsilon()) {
-                        /* If we got here, target_state is reachable from current state via e-transition
-                           if target_state has already been reached by another path
-                           add it to the eclose_map anyway to preserve path information
-                        */
-             //           eclose_stack.push(target_state);
-                        /* make a clone of the state object so we don't end up with 
-                          multiple references to the same object */
-                         
-                        // iterate over a newly created list below to prevent ConcurrentModificationException
-                        // when we put the target_state back in eclose_map
-             //           current_stateobj_list = new ArrayList<>(eclose_map.get(current_state));
-             //           for(Path_to_State current_state_obj : current_stateobj_list){
-                          //  target_state_obj = new Path_to_State(current_state_obj);
-                        /* push the newly reached target state on the stack
-                        so we can look for e-transitions from that state in the 
-                        next iteration of the while loop
-                        */
-           //                 eclose_map.putUnique(target_state, current_state_obj);
-                        /*
-                         add the target state and it's associated state object
-                         to the map that will be returned
-                         
-                        }
-                    }                           
-        }*/
       return eclose_map;
     }
  }

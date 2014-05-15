@@ -41,7 +41,7 @@ class NFASimulator {
     private NFA_StateObject init_simulator(){
         transMatrix = original_start_table;
         Path_to_State_List eclosed_start_states = new Path_to_State_List(); 
-        eclose_cache = EClose_Cache.populate_eclose_cache(transMatrix);
+        eclose_cache = EClose_Cache.create_eclose_cache(transMatrix);
         
         Integer start = original_start_table.getStart();
         eclosed_start_states.put(start, new Path_to_State());

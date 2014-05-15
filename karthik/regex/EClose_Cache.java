@@ -28,7 +28,7 @@ class EClose_Cache
         return (return_array == null) ? new Integer[0] : return_array;
         }
 
-    static EClose_Cache populate_eclose_cache(TransitionTable transition_table)
+    static EClose_Cache create_eclose_cache(TransitionTable transition_table)
         {
         // e-closes every state in the transition matrix 
 
