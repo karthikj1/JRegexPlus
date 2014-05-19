@@ -276,7 +276,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         Path_to_State current_state_obj;
         
         Matchable match_token;
-        boolean found_quantifier_token;
+        boolean retain_state, has_transitions;
         Integer current_state;
         
         for (Integer stateID : source_states.keySet()) {
@@ -290,15 +290,20 @@ class Enhanced_NFASimulator extends NFASimulator{
         }
 
         while (!boundary_stack.isEmpty()) {
-            found_quantifier_token = false;
+            retain_state = false;
+            has_transitions = false;
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for quantifier tokens
             for (Integer target_state : transMatrix.getKeySet(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
-
-                if (match_token.isQuantifier()){
-                    found_quantifier_token = true;
+                has_transitions = true;
+                if(!match_token.isQuantifier() && !match_token.isEpsilon()){
+                        retain_state = true;
+                        continue;
+                    }
+                
+                if (match_token.isQuantifier()){                    
                     /* found a quantifier token so process it
                      * so make the transitions it produces
                      */
@@ -316,7 +321,8 @@ class Enhanced_NFASimulator extends NFASimulator{
             /* there were no transitions involving quantifier tokens for this state
              * So put it back in the list of active states
              */
-            if ((!found_quantifier_token)) 
+            retain_state = retain_state | (!has_transitions);
+            if (retain_state) 
                 move_states.putUnique(current_state, current_state_obj);
             
         } // while stack is not empty

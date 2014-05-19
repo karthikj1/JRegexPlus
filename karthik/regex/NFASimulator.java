@@ -205,7 +205,7 @@ class NFASimulator {
         Path_to_State current_state_obj;
         
         Matchable match_token;
-        boolean found_quantifier_token;
+        boolean retain_state, has_transitions;
         Integer current_state;        
         
         for (Integer stateID : source_states.keySet()) {
@@ -217,33 +217,37 @@ class NFASimulator {
         }
 
         while (!boundary_stack.isEmpty()) {
-            found_quantifier_token = false;
+            retain_state = false;
+            has_transitions = false;
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for quantifier tokens
             for (Integer target_state : transMatrix.getKeySet(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
-
-                   if (match_token.isQuantifier()){
-                    found_quantifier_token = true;
+                has_transitions = true;
+                if(!match_token.isQuantifier() && !match_token.isEpsilon()){
+                        retain_state = true;
+                        continue;
+                    }
                     /* found a quantifier token, so process it 
                      * and make the transitions it produces
                      */
+                    if(match_token.isQuantifier()){
                     if (!move_states.containsKey(target_state)) {
-                        current_state_obj.processQuantifier(string_index, (QuantifierToken) match_token);
+                        Path_to_State target_state_obj = new Path_to_State(current_state_obj);
+                        target_state_obj.processQuantifier(string_index, (QuantifierToken) match_token);
                         // add transition produced by quantifier token
                         boundary_stack.push(target_state);
-                        boundary_stack_objects.push(new Path_to_State(current_state_obj));
+                        boundary_stack_objects.push(target_state_obj);
 
-                    } 
-
-                } // match token is quantifier 
-
+                        }
+                    }
             } // for target_state
             /* there were no transitions involving quantifier tokens for this state
              * So put it back in the list of active states
              */
-            if ((!found_quantifier_token) &&(!move_states.containsKey(current_state))) 
+            retain_state = retain_state | (!has_transitions);
+            if ((retain_state) &&(!move_states.containsKey(current_state))) 
                 move_states.put(current_state, current_state_obj);
             
         } // while stack is not empty
