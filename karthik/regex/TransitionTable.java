@@ -240,9 +240,14 @@ class TransitionTable implements Cloneable
     
     TransitionTable plus(){
         TransitionTable temp = this.clone();
-        star();
+        expand_table(1);
+        setTransition(finish, getNumStates() - 1, eps);
+        finish = getNumStates() - 1;
+        
+        temp = temp.star();        
         concat(temp);
         temp = null;
+        
         return this;
     }
     
@@ -282,26 +287,30 @@ class TransitionTable implements Cloneable
             return this;
         }         
             
-        if(min == 0)
-           question();
-        temp = this.clone();           
+        temp = this.clone();
         
-        for(int r = 2; r < min; r++)
+        if(min == 0)
+           question();                   
+
+        expand_table(1);  // add finish state but don't set it as finish state yet
+        int brace_finish = getNumStates() - 1;
+        
+        if(min == 1){
+          setTransition(finish, brace_finish, eps);
+        }
+
+        for(int r = 2; r <= min; r++)
             concat(temp);        
             
         if(max == 0){   // n1 is repeated min or more times, no upper limit
-            concat(temp.plus());
+            concat(temp.star());
             return this;
         }
         
-        expand_table(1);  // add finish state
-        int brace_finish = getNumStates() - 1;
-        int adjusted_min = min;
-        if(min == 1){
-            setTransition(finish, brace_finish, eps);
-          adjusted_min = 2;   
-        }
-        for(int r = adjusted_min; r <= max; r++){
+        // sets transition after min repeats
+        setTransition(finish, brace_finish, eps);
+        
+        for(int r = min + 1; r <= max; r++){
             // n1 is repeated between min and max times               
             // set e-transitions so that NFA state can transition to finish
             // anywhere between min and max times

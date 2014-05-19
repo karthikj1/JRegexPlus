@@ -43,10 +43,7 @@ class RegexToken implements Matchable{
     }
     
     
-    List<Integer> addGroupIDList(List<Integer> newGroupID) {
-   //     for(Integer i: newGroupID)
-   //             groupIDList.add(i);
-        
+    List<Integer> addGroupIDList(List<Integer> newGroupID) {    
         groupIDList = newGroupID;
   
         return groupIDList;

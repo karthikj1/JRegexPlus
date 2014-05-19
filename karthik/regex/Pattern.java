@@ -378,4 +378,13 @@ public class Pattern {
         }
         return false;
         }
+    
+    private Integer getMaxGroupID(){
+        Integer maxGroupID = -1;
+        
+        for(Integer i: groupIDList)
+            maxGroupID = (maxGroupID < i) ? i : maxGroupID;
+        
+        return maxGroupID;
+    }
     }
