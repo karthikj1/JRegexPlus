@@ -68,6 +68,7 @@ class Enhanced_NFASimulator extends NFASimulator{
                   // first check boundary if there are any boundary tokens
                   states = boundary_close(states);
                    longest_success = get_longest_success(states, longest_success); 
+                   states = process_quantifiers(states);            
                 // now actually read the current character
                 states = move(states);
                 states = process_quantifiers(states);

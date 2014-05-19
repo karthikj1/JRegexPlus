@@ -271,7 +271,7 @@ class TransitionTable implements Cloneable
         expand_table(1);
         finish = getNumStates() - 1;
         
-        setTransition(start, finish, eps);
+        setTransition(start, finish, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, false));
         setTransition(oldFinish, finish, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, false));
         setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, true)); 
         
