@@ -252,11 +252,9 @@ class TransitionTable implements Cloneable
         int oldStart = temp.getStart();        
         temp.expand_table(1);
         temp.finish = temp.getNumStates() - 1;
-
-   //     temp.setTransition(oldStart, temp.finish, eps);
+   
         temp.setTransition(oldStart, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
         temp.setTransition(oldFinish, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
-//        temp.setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, true)); 
         temp.setTransition(oldFinish, oldStart, eps); 
    
         // concat temp now that it has been made into star
@@ -312,12 +310,15 @@ class TransitionTable implements Cloneable
            question();                   
 
         expand_table(1);  // add finish state but don't set it as finish state yet
-        int brace_finish = getNumStates() - 1;
+        int brace_finish = getNumStates() - 1;        
         
         if(min == 1){
           setTransition(finish, brace_finish, eps);
         }
-
+        
+        expand_table(1);
+        setTransition(finish, getNumStates() - 1, new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, true));
+        finish = getNumStates() - 1;
         for(int r = 2; r <= min; r++)
             concat(temp);        
             
@@ -327,14 +328,14 @@ class TransitionTable implements Cloneable
         }
         
         // sets transition after min repeats
-        setTransition(finish, brace_finish, eps);
+        setTransition(finish, brace_finish, new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, false));
         
         for(int r = min + 1; r <= max; r++){
             // n1 is repeated between min and max times               
             // set e-transitions so that NFA state can transition to finish
             // anywhere between min and max times
             concat(temp);
-            setTransition(getFinish(), brace_finish, eps);
+            setTransition(getFinish(), brace_finish, new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, false));
         }
         finish = brace_finish;
         return this;

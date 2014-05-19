@@ -309,17 +309,24 @@ class Enhanced_NFASimulator extends NFASimulator{
                      */
                         Path_to_State target_state_obj = new Path_to_State(current_state_obj);
                         target_state_obj.processQuantifier(string_index, (QuantifierToken) match_token);
+                       
                         // add transition produced by quantifier token
                         
                         boundary_stack.push(target_state);
                         boundary_stack_objects.push(target_state_obj);
 
-
                 } // if match_token is a quantifier
+                
+                if (match_token.isEpsilon())
+                    {
+                    boundary_stack.push(target_state);
+                    boundary_stack_objects.push(current_state_obj);
+                    }                    
 
             } // for target_state
-            /* there were no transitions involving quantifier tokens for this state
-             * So put it back in the list of active states
+            /* if there were transitions involving non-quantifier tokens for this state
+             * or there were no transitions at all (i.e. the finish state)
+             * put it back in the list of active states
              */
             retain_state = retain_state | (!has_transitions);
             if (retain_state) 
