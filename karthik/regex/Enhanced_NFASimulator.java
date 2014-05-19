@@ -70,7 +70,9 @@ class Enhanced_NFASimulator extends NFASimulator{
                    longest_success = get_longest_success(states, longest_success); 
                 // now actually read the current character
                 states = move(states);
+                states = process_quantifiers(states);
                 longest_success = get_longest_success(states, longest_success);
+                
                 current_nfa.states = states;
                 if(!states.isEmpty())
                     temp_stack.push(current_nfa);
@@ -83,6 +85,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         // one final boundary_close in case there is a $ in the regex to match the end of the string 
         // original nfa is evaluated again for edge cases where the match starts on the last boundary 
         // before end of string. eg. (?<=foo) on an input string foo
+        // quantifier processing is not needed here
         nfa_stack.push(init_simulator());
         
         while(!nfa_stack.isEmpty())
@@ -263,6 +266,65 @@ class Enhanced_NFASimulator extends NFASimulator{
         return eclose(move_states, eclose_cache);
     }    
 
+       private Enhanced_Path_to_State_List process_quantifiers(final Enhanced_Path_to_State_List source_states) 
+            throws MatcherException {
+        /* assumes source_states has already been e-closed
+           moves to new state based on the boundary at index string_index from the string search_string
+           and returns a new set of states along with their related state objects
+        */
+        Enhanced_Path_to_State_List move_states = new Enhanced_Path_to_State_List();
+        Path_to_State current_state_obj;
+        
+        Matchable match_token;
+        boolean found_quantifier_token;
+        Integer current_state;
+        
+        for (Integer stateID : source_states.keySet()) {
+            /* take each initial_states in the provided initial states and
+             push it and it's associated initial_states object on a stack
+             */
+            for(Path_to_State source_state_obj:source_states.get(stateID)){
+                boundary_stack.push(stateID);
+                boundary_stack_objects.push(source_state_obj);
+            }
+        }
+
+        while (!boundary_stack.isEmpty()) {
+            found_quantifier_token = false;
+            current_state = boundary_stack.pop();
+            current_state_obj = boundary_stack_objects.pop();
+            // cycle through every possible transition from current_state, looking for quantifier tokens
+            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+                match_token = transMatrix.getTransition(current_state, target_state);
+
+                if (match_token.isQuantifier()){
+                    found_quantifier_token = true;
+                    /* found a quantifier token so process it
+                     * so make the transitions it produces
+                     */
+                        Path_to_State target_state_obj = new Path_to_State(current_state_obj);
+                        target_state_obj.processQuantifier(string_index, (QuantifierToken) match_token);
+                        // add transition produced by quantifier token
+                        
+                        boundary_stack.push(target_state);
+                        boundary_stack_objects.push(target_state_obj);
+
+
+                } // if match_token is a quantifier
+
+            } // for target_state
+            /* there were no transitions involving quantifier tokens for this state
+             * So put it back in the list of active states
+             */
+            if ((!found_quantifier_token)) 
+                move_states.putUnique(current_state, current_state_obj);
+            
+        } // while stack is not empty
+
+        return eclose(move_states, eclose_cache);
+    }    
+
+       
     private Enhanced_Path_to_State_List eclose(final Enhanced_Path_to_State_List current_states, EClose_Cache cache) {        
 
         Enhanced_Path_to_State_List eclose_map = new Enhanced_Path_to_State_List();        

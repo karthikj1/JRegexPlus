@@ -237,17 +237,17 @@ public class Pattern {
             TransitionTable trans_table = matcherStack.pop();            
             switch(current.getType()){
                 case STAR:
-                    matcherStack.push(trans_table.star());
+                    matcherStack.push(trans_table.star(getMaxGroupID()));
                     break;
                 case QUESTION:
                     matcherStack.push(trans_table.question());
                     break;
                 case PLUS:
-                    matcherStack.push(trans_table.plus());
+                    matcherStack.push(trans_table.plus(getMaxGroupID()));
                     break;
                 case BRACE:
                     matcherStack.push(trans_table.brace(((BraceRegexToken) current).min, 
-                            ((BraceRegexToken) current).max));
+                            ((BraceRegexToken) current).max, getMaxGroupID()));
                     break;                
                 default:
                     throw new ParserException("Reached unknown unary operator" + current.toString());                    

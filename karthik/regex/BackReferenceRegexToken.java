@@ -32,5 +32,12 @@ public class BackReferenceRegexToken extends RegexToken
         return backRefID;
         }
     
-    
+     public String toString()
+    {
+        StringBuilder sb = new StringBuilder("");
+        sb.append(getType().name() + " ");
+        sb.append("GROUP " + getBackRefID() + " ");
+        sb.append(groupID_toString() + " ");
+        return sb.toString();        
+    }    
     }

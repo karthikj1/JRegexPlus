@@ -25,24 +25,35 @@ class Path_to_State {
      *  in the string being matched.        
      *******************************/
     private Map<Integer, Integer[]> Group_locations;
+    private Map<Integer, Integer[]> quantifier_locations;
     private Integer startIndex = -1;
     private Integer endIndex = -1;
     private Integer max_group_num = -1;
+    private final int START = 0;
+    private final int END = 1;
+    
 
     Path_to_State() {
         Group_locations = new HashMap<>();
+        quantifier_locations = new HashMap<>();
     }
 
     Path_to_State(Path_to_State copyObj) {
         Integer[] tempArray;
         
         Group_locations = new HashMap<>();
-               
+        quantifier_locations = new HashMap<>();
+        
         for(Integer group_num : copyObj.Group_locations.keySet()){    
             tempArray = copyObj.Group_locations.get(group_num);
             Group_locations.put(group_num, Arrays.copyOf(tempArray, 2));
         }
-            
+      
+        for(Integer group_num : copyObj.quantifier_locations.keySet()){    
+            tempArray = copyObj.quantifier_locations.get(group_num);
+            quantifier_locations.put(group_num, Arrays.copyOf(tempArray, 2));
+        }
+      
          this.startIndex = copyObj.startIndex;
          this.endIndex = copyObj.endIndex;      
          this.max_group_num = copyObj.max_group_num;
@@ -65,16 +76,83 @@ class Path_to_State {
             if (tempArray == null)
                 {
                 tempArray = new Integer[2];
-                tempArray[0] = tempArray[1] = index;
+                tempArray[START] = tempArray[END] = index;
                 Group_locations.put(group_num, tempArray);
                 } else    // just update the ending index 
-                {
-                tempArray[1] = index;
+                {                
+/*              reason for below is a bit subtle - 
+                if index is not continuous with the current end index for this group as stored in tempArray[END]
+                that means we are within a quantifier loop and there are elements of other groups in between
+                tempArray[END] and index. So we reset the start index as well so that we only capture members of this group
+  */              if(index != tempArray[END] + 1)
+                    tempArray[START] = index;
+                // just update the ending index                
+                tempArray[END] = index;
                 }
             max_group_num = (max_group_num > group_num)? max_group_num : group_num;
             }
         }
+    
+    void processQuantifier(final Integer index, QuantifierToken quant_token){
+        Integer quantID = quant_token.getQuantifierGroup();
+        
+        processQuantStart(index, quantID);
+        if(quant_token.isQuantStop())            
+            processQuantStop(index, quantID);
+    }
 
+    private void processQuantStart(final Integer index, final Integer quantID)
+        {
+        Integer[] tempArray;
+
+        tempArray = quantifier_locations.get(quantID);
+        if (tempArray == null)
+            {
+            tempArray = new Integer[2];
+            tempArray[START] = tempArray[END] = index;
+            quantifier_locations.put(quantID, tempArray);
+            } else    // just update the ending index 
+            {
+            // just update the ending index                
+            tempArray[END] = index;
+            }
+        }
+    
+    private void processQuantStop(final Integer index, final Integer quantID){
+        Integer[] group_indices, quant_indices;
+        
+        for(Integer group:Group_locations.keySet()){            
+            if(quantID >= group)
+                continue;
+            
+            group_indices = Group_locations.get(group);
+            if(!has_intersection(quantID, group_indices))
+                continue;
+            
+            quant_indices = quantifier_locations.get(quantID);
+            group_indices[END] = (quant_indices[START] > group_indices[START]) ? quant_indices[START] : group_indices[START];   
+            
+        }
+        quantifier_locations.remove(quantID);
+    }
+    
+    private boolean has_intersection(Integer quantID, Integer[] group_indices){
+        // only called when quantID exists in the quantifier_locations map so
+        // no need to check for null on looking up in map
+        
+        Integer[] quant_locations = quantifier_locations.get(quantID);
+        // is this group strictly outside the quantifiers limits
+        if((group_indices[END] < quant_locations[START]) || (group_indices[START] > quant_locations[END]))
+            return false;
+        
+        // is this group strictly *inside* the quantifiers location
+        if((group_indices[START] > quant_locations[START]) && (group_indices[END] < quant_locations[END]))
+            return false;
+        
+        // if we got here, the group and the quantifier intersect
+            return true;
+    }
+    
     Integer[][] get_matches_from_state() {        
         
         /*This function extracts start and end index for each submatch by
@@ -84,7 +162,7 @@ class Path_to_State {
         Integer[] tempArray, empty_string_array;
         
         empty_string_array = new Integer[2];
-        empty_string_array[0] = empty_string_array[1] = -1;
+        empty_string_array[START] = empty_string_array[END] = -1;
         
         if(startIndex == -1){
             returnArray = new Integer[1][2];
@@ -114,7 +192,7 @@ class Path_to_State {
         Integer[] emptyArray = new Integer[2];        
         Integer[] tempArray;
         
-        emptyArray[0] = emptyArray[1] = -1;
+        emptyArray[START] = emptyArray[END] = -1;
         if(startIndex == -1)
             return emptyArray;
         
@@ -148,7 +226,7 @@ class Path_to_State {
             Integer[] obj2_indices = obj2.get_match_for_group(group_num);
             Integer[] indices = this.get_match_for_group(group_num);
 
-            if ((indices[0] != obj2_indices[0]) || (indices[1] != obj2_indices[1]))
+            if ((indices[START] != obj2_indices[START]) || (indices[END] != obj2_indices[END]))
                 return false;
             }
         

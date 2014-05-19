@@ -238,25 +238,42 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-    TransitionTable plus(){
+    TransitionTable plus(Integer quantGroupID){
+        // plus implemented as a+ = a.a*
+        
         TransitionTable temp = this.clone();
         expand_table(1);
-        setTransition(finish, getNumStates() - 1, eps);
+        setTransition(finish, getNumStates() - 1, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, true));
         finish = getNumStates() - 1;
         
-        temp = temp.star();        
+        // convert temp into temp.star
+        // done here instead of calling star method because quantifiers are different
+        int oldFinish = temp.getFinish();
+        int oldStart = temp.getStart();        
+        temp.expand_table(1);
+        temp.finish = temp.getNumStates() - 1;
+        
+        temp.setTransition(oldStart, temp.finish, eps);
+        temp.setTransition(oldFinish, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
+        temp.setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, true)); 
+        
+        // concat temp now that it has been made into star
         concat(temp);
         temp = null;
         
         return this;
     }
     
-    TransitionTable star(){
-        // same as question but with one e-transition more
+    TransitionTable star(Integer quantGroupID){
+        // same as question but with one e-transition more and with quantifier markers instead of eps
         int oldFinish = getFinish();
-        int oldStart = getStart();
-        question();
-        setTransition(oldFinish, oldStart, eps); 
+        int oldStart = getStart();        
+        expand_table(1);
+        finish = getNumStates() - 1;
+        
+        setTransition(start, finish, eps);
+        setTransition(oldFinish, finish, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, false));
+        setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, true)); 
         
        return this;
     }
@@ -277,13 +294,13 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-   TransitionTable brace(final int min,final int max){ 
+   TransitionTable brace(final int min,final int max, Integer quantGroupID){ 
         // max = 0 implies max is infinity       
                
        TransitionTable temp;
        
         if ((min == 0) && (max == 0)){
-            star();
+            star(quantGroupID);
             return this;
         }         
             
@@ -303,7 +320,7 @@ class TransitionTable implements Cloneable
             concat(temp);        
             
         if(max == 0){   // n1 is repeated min or more times, no upper limit
-            concat(temp.star());
+            concat(temp.star(quantGroupID));
             return this;
         }
         

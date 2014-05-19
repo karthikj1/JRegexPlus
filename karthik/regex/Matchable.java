@@ -13,7 +13,8 @@ import java.util.List;
  * @author karthik
  */
 public interface Matchable {
-    public boolean isEpsilon();    
+    public boolean isEpsilon();   
+    public boolean isQuantifier();   
     public boolean matches(final CharSequence s, final int pos) throws MatcherException;
     public List<Integer> getGroupID();     
     public boolean isBoundaryOrLookaround();

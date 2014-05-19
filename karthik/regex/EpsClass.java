@@ -24,6 +24,13 @@ class EpsClass implements Matchable
         
         return EpsClassRef;
     }
+    
+    
+    public boolean isQuantifier()
+        {
+        return false;
+        }
+
     public boolean isEpsilon()
         {
         return true;

@@ -75,6 +75,10 @@ class RegexToken implements Matchable{
         return false;
     }       
     
+    public boolean isQuantifier(){
+        return (getOpType() == OpTypes.QUANTIFIER);
+    }       
+
     public boolean isBackReference(){
         // isBackReference defaults to false unless overridden by subclass
         return false;

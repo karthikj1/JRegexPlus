@@ -74,8 +74,9 @@ class NFASimulator {
             longest_success = get_longest_success(states, longest_success);
             // now actually read the current character
             states = move(states);
+            states = process_quantifiers(states);
             longest_success = get_longest_success(states, longest_success);
-
+            
             string_index++;
             }
 
@@ -180,13 +181,69 @@ class NFASimulator {
 
                     } // if match_token matches current character
 
-                } // if match_token != null
-
+                } // match token is boundary or lookaround 
+                 
             } // for target_state
             /* there were no transitions involving boundary tokens for this state
              * So put it back in the list of active states
              */
             if ((!found_boundary_token) &&(!move_states.containsKey(current_state))) 
+                move_states.put(current_state, current_state_obj);
+            
+        } // while stack is not empty
+
+        return eclose(move_states);
+    }    
+
+    private Path_to_State_List process_quantifiers(final Path_to_State_List source_states) 
+            throws MatcherException {
+        /* assumes source_states has already been e-closed
+           moves to new state based on the boundary at index string_index from the string search_string
+           and returns a new set of states along with their related state objects
+        */
+        Path_to_State_List move_states = new Path_to_State_List();
+        Path_to_State current_state_obj;
+        
+        Matchable match_token;
+        boolean found_quantifier_token;
+        Integer current_state;        
+        
+        for (Integer stateID : source_states.keySet()) {
+            /* take each initial_states in the provided initial states and
+             push it and it's associated initial_states object on a stack
+             */
+            boundary_stack.push(stateID);
+            boundary_stack_objects.push(source_states.get(stateID));
+        }
+
+        while (!boundary_stack.isEmpty()) {
+            found_quantifier_token = false;
+            current_state = boundary_stack.pop();
+            current_state_obj = boundary_stack_objects.pop();
+            // cycle through every possible transition from current_state, looking for quantifier tokens
+            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+                match_token = transMatrix.getTransition(current_state, target_state);
+
+                   if (match_token.isQuantifier()){
+                    found_quantifier_token = true;
+                    /* found a quantifier token, so process it 
+                     * and make the transitions it produces
+                     */
+                    if (!move_states.containsKey(target_state)) {
+                        current_state_obj.processQuantifier(string_index, (QuantifierToken) match_token);
+                        // add transition produced by quantifier token
+                        boundary_stack.push(target_state);
+                        boundary_stack_objects.push(new Path_to_State(current_state_obj));
+
+                    } 
+
+                } // match token is quantifier 
+
+            } // for target_state
+            /* there were no transitions involving quantifier tokens for this state
+             * So put it back in the list of active states
+             */
+            if ((!found_quantifier_token) &&(!move_states.containsKey(current_state))) 
                 move_states.put(current_state, current_state_obj);
             
         } // while stack is not empty
