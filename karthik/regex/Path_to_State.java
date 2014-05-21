@@ -31,6 +31,8 @@ class Path_to_State {
     private Integer max_group_num = -1;
     private final int START = 0;
     private final int END = 1;
+    // sets how submatch grouping works - see explanation in processQuantStart methods
+    private final boolean CAPTURE_END = true;
     
 
     Path_to_State() {
@@ -81,9 +83,9 @@ class Path_to_State {
                 } else    // just update the ending index 
                 {                
 /*              reason for below is a bit subtle - 
-                if index is not continuous with the current end index for this group as stored in tempArray[END]
+                if index is not continuous with the current end index for this group as stored in quant_indices[END]
                 that means we are within a quantifier loop and there are elements of other groups in between
-                tempArray[END] and index. So we reset the start index as well so that we only capture members of this group
+                quant_indices[END] and index. So we reset the start index as well so that we only capture members of this group
   */              if(index != tempArray[END] + 1)
                     tempArray[START] = index;
                 // just update the ending index                
@@ -96,13 +98,27 @@ class Path_to_State {
     void processQuantifier(final Integer index, QuantifierToken quant_token){
         Integer quantID = quant_token.getQuantifierGroup();
         
-        processQuantStart(index, quantID);
-        if(quant_token.isQuantStop())            
-            processQuantStop(index, quantID);
-    }
+        if (CAPTURE_END)
+            {                        
+            if (quant_token.isQuantStop())
+                processQuantStop_captureLast(index, quantID);
+            else
+                processQuantStart_captureLast(index, quantID);
+            return;
+            }
+        
+        // CAPTURE_END is not true
+        
+            processQuantStart_captureFirst(index, quantID);
+            if(quant_token.isQuantStop())
+                processQuantStop_captureFirst(quantID);                
+        }
 
-    private void processQuantStart(final Integer index, final Integer quantID)
+    private void processQuantStart_captureFirst(final Integer index, final Integer quantID)
         {
+         /*  returns first captured group in a quantifier for a submatch
+         *  eg. given (\d)+ on string 1234, returns group 1 as 1
+         */   
         Integer[] tempArray;
 
         tempArray = quantifier_locations.get(quantID);
@@ -117,8 +133,8 @@ class Path_to_State {
             tempArray[END] = index;
             }
         }
-    
-    private void processQuantStop(final Integer index, final Integer quantID){
+        
+    private void processQuantStop_captureFirst(final Integer quantID){
         Integer[] group_indices, quant_indices;
         
         for(Integer group:Group_locations.keySet()){            
@@ -136,6 +152,47 @@ class Path_to_State {
         quantifier_locations.remove(quantID);
     }
     
+        private void processQuantStart_captureLast(final Integer index, final Integer quantID)
+        {
+        /*  works like Java regex API and returns last captured group in a quantifier for a submatch
+         *  eg. given (\d)+ on string 1234, returns group 1 as 4
+         */   
+            Integer[] tempArray = new Integer[2];
+            tempArray[START] = tempArray[END] = index;
+            quantifier_locations.put(quantID, tempArray);
+        }
+
+    private void processQuantStop_captureLast(final Integer index, final Integer quantID){
+        Integer[] group_indices, quant_indices;
+        
+        quant_indices = quantifier_locations.get(quantID);
+        if (quant_indices == null) // we hit quant stop without hitting quant start first so nothing to do
+            return;                           
+        
+        if((quant_indices[END] == quant_indices[START]) && (quant_indices[END] == index)){
+            // we hit a quant-stop immediately after a quant-start without any intervening characters or boundaries
+            // so remove the bogus quantifier index and don't make any changes to the indices
+            quantifier_locations.remove(quantID);
+            return;
+        }
+            
+        quant_indices[END] = index;        
+        quant_indices[START] = (quant_indices[START] + 1 < index) ? quant_indices[START] + 1 : index;
+        
+        for(Integer group:Group_locations.keySet()){            
+            if(quantID >= group)
+                continue;
+            
+            group_indices = Group_locations.get(group);
+            // is this group strictly outside the quantifiers limits
+            if((group_indices[END] < quant_indices[START]) || (group_indices[START] > quant_indices[END]))
+                continue;                        
+            
+            group_indices[START] = quant_indices[START];               
+        }
+        quantifier_locations.remove(quantID);
+    }
+
     private boolean has_intersection(Integer quantID, Integer[] group_indices){
         // only called when quantID exists in the quantifier_locations map so
         // no need to check for null on looking up in map

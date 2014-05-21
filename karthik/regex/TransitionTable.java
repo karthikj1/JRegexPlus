@@ -255,7 +255,7 @@ class TransitionTable implements Cloneable
    
         temp.setTransition(oldStart, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
         temp.setTransition(oldFinish, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
-        temp.setTransition(oldFinish, oldStart, eps); 
+        temp.setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, true)); 
    
         // concat temp now that it has been made into star
         concat(temp);
