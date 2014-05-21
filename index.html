@@ -35,7 +35,7 @@
 
 <p><em><strong>What it does</strong></em></p>
 
-<p>This is a full-fledged regular expression engine written in Java. It is unique in that it is a one-pass NFA engine <em>without</em> backtracking that can handle back-references, provide sub-match groupings and process lookaround operators with arbitrary embedded regular expressions(including variable-length operators like + and *). The ability to handle back-references without backtracking or multiple passes is unique among publicly available regular expression engines - including popular ones like PERL, PCRE or java.util.regex.</p>
+<p>This is a full-fledged regular expression engine written in Java. It is unique in that it is a one-pass NFA engine <em>without</em> backtracking that can handle back-references, provide sub-match groupings and process lookaround operators with arbitrary embedded regular expressions(including variable-length operators like + and *). The ability to handle back-references without backtracking or multiple passes is unique among publicly available regular expression engines - including popular ones like Perl, PCRE or java.util.regex.</p>
 
 <p><em><strong>What it includes</strong></em></p>
 
@@ -43,9 +43,9 @@
 
 <p> Additional features</p>
 <ul>
-<li> Backreferences are processed without backtracking or multiple passes. This offers a significant performance advantage when processing regexes that would make normal backtracking implementations crash. Eg. (\w{1,2}(.+)\2) on a long search text.
+<li> Backreferences are processed without backtracking or multiple passes. 
 <p></p>
-<li> Lookbehind operator can handle arbitrary regular expressions including + and * operators but not backreferences. Lookbehind does use a second pass over the input at the point where the lookbehind begins. 
+<li> Lookbehind operator can handle arbitrary regular expressions including + and * operators but not backreferences. Lookaround does use a second pass over the input at the point where the lookaround begins. 
 </ul>
 
 <p>Advantages and disadvantages</p>
@@ -54,9 +54,9 @@
 <p></p>
 <li> The results honour left-most longest matching more closely. Given the expression (nfa|nfa karthik) on a string "nfa karthik", a traditional nfa will match just nfa. JRegexPlus will match "nfa karthik".
 <p></p>
-<li> The main disadvantage for now is a slight loss of speed when handling simpler regular expressions, especially ones involving a lot of alternation. However, this has more to do with the fact that this is a proof of concept demo and does not have any optimizations. With optimizations and tighter code, the core algorithm can be expected to perform at least as well as a backtracking implementation in normal cases while continuing to respond fast in cases that would make a backtracker hang.
+<li> The general problem of matching regexes that include backreferences is NP-complete so it is still possible to construct combinations of regular expressions and text that will cause exponential blowup. However, this engine's technique has the advantage of other Thompson NFA implementations in that expressions without backreferences will not create exponential blowup. As a result, the number of corner cases with backreferences that blowup the engine are also fewer.
 <p></p>
-<li> Submatches with quantifiers work in a slightly nonstandard way - eg. (ab)+ on abab will return subgroup 1 as abab rather than ab. This has an impact on what matches a backreference. While irrelevant to the larger concept of matching backreferences without backtracking, this issue is expected to be fixed shortly along with the addition of lazy quantifiers.
+<li> There is a slight loss of speed when handling simpler regular expressions. However, this has more to do with the fact that this is a proof of concept demo and does not have any optimizations. With optimizations and tighter code, the core algorithm can be expected to perform at least as well as a backtracking implementation in normal cases while continuing to respond fast in cases that would make a backtracker hang.
 </ul>
 
 <p></p>
