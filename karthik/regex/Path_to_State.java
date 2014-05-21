@@ -31,8 +31,8 @@ class Path_to_State {
     private Integer endIndex = -1;
     private Integer max_group_num = -1;
     
-    private final int START = 0;
-    private final int END = 1;
+    private static final int START = 0;
+    private static final int END = 1;
     
 
     Path_to_State() {

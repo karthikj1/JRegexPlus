@@ -334,7 +334,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             
         } // while stack is not empty
 
-        return eclose(move_states, eclose_cache);
+        return move_states;
     }    
 
        

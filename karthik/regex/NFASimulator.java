@@ -263,7 +263,7 @@ class NFASimulator {
             
         } // while stack is not empty
 
-        return eclose(move_states);
+        return move_states;
     }    
 
     private Path_to_State_List eclose(final Path_to_State_List current_states) {        
