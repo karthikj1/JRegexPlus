@@ -88,6 +88,13 @@ class Path_to_State {
   */            if(index != tempArray[END] + 1)
                     tempArray[START] = index;
                 
+                /* if group_num is greater than the highest quantifier ID in the flag list
+                 * we are in a quantifier loop, so we reset the start ID's for all groups affected
+                 * by the flag. eg. in (\w(\d)+)*, * is in quant group 0 and + in quant group 1 
+                 * so when running on string a2b, we hit 'b'(matched by \w in group 0 and 1
+                 * after hitting * in group 0, so we adjust the start index for group 1
+                 * so that it resets and only captures the last thing captured in that group which is 'b'
+                */    
                 if (group_num > last_quantifier_flag)
                     tempArray[START] = index;
                 // just update the ending index                
@@ -110,7 +117,9 @@ class Path_to_State {
             if (quant_token.isQuantStop())
                 quantifier_flags.remove(quantID);
             else
-                quantifier_flags.add(quantID);
+                if(!quantifier_flags.contains(quantID))
+         // seems to work without it but not sure if above if is needed - check this       
+                        quantifier_flags.add(quantID);
             return;
         }
 
@@ -182,9 +191,9 @@ class Path_to_State {
         if(obj2.max_group_num != this.max_group_num)
             return false;
         
-        if(!obj2.quantifier_flags.equals(this.quantifier_flags))
+      /*  if(!obj2.quantifier_flags.equals(this.quantifier_flags))
             return false;
-        
+        */
         for (Integer group_num = 1; group_num <= max_group_num; group_num++)
             {
             Integer[] obj2_indices = obj2.get_match_for_group(group_num);

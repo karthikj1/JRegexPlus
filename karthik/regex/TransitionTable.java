@@ -305,6 +305,10 @@ class TransitionTable implements Cloneable
         }         
             
         temp = this.clone();
+        temp.expand_table(1);
+        temp.setTransition(temp.finish, temp.getNumStates() - 1, 
+                new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, true));
+        temp.finish = temp.getNumStates() - 1;
         
         if(min == 0)
            question();                   
