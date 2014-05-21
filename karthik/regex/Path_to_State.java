@@ -6,6 +6,7 @@
 
 package karthik.regex;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -25,36 +26,30 @@ class Path_to_State {
      *  in the string being matched.        
      *******************************/
     private Map<Integer, Integer[]> Group_locations;
-    private Map<Integer, Integer[]> quantifier_locations;
+    private List<Integer> quantifier_flags;
     private Integer startIndex = -1;
     private Integer endIndex = -1;
     private Integer max_group_num = -1;
+    
     private final int START = 0;
     private final int END = 1;
-    // sets how submatch grouping works - see explanation in processQuantStart methods
-    private final boolean CAPTURE_END = true;
     
 
     Path_to_State() {
         Group_locations = new HashMap<>();
-        quantifier_locations = new HashMap<>();
+        quantifier_flags = new ArrayList<>();
     }
 
     Path_to_State(Path_to_State copyObj) {
         Integer[] tempArray;
         
         Group_locations = new HashMap<>();
-        quantifier_locations = new HashMap<>();
+        quantifier_flags = new ArrayList<>(copyObj.quantifier_flags);
         
         for(Integer group_num : copyObj.Group_locations.keySet()){    
             tempArray = copyObj.Group_locations.get(group_num);
             Group_locations.put(group_num, Arrays.copyOf(tempArray, 2));
-        }
-      
-        for(Integer group_num : copyObj.quantifier_locations.keySet()){    
-            tempArray = copyObj.quantifier_locations.get(group_num);
-            quantifier_locations.put(group_num, Arrays.copyOf(tempArray, 2));
-        }
+        }                 
       
          this.startIndex = copyObj.startIndex;
          this.endIndex = copyObj.endIndex;      
@@ -70,146 +65,55 @@ class Path_to_State {
         
         endIndex = index;
         
+        Integer last_quantifier_flag = get_max_quantifier_flag();
+        
         // now update indices for each group
         for (Integer group_num : groupID)
             {
             tempArray = Group_locations.get(group_num);
+            max_group_num = (max_group_num > group_num)? max_group_num : group_num;
             // set start and end index if this is first character in this group
             if (tempArray == null)
                 {
                 tempArray = new Integer[2];
                 tempArray[START] = tempArray[END] = index;
                 Group_locations.put(group_num, tempArray);
-                } else    // just update the ending index 
-                {                
-/*              reason for below is a bit subtle - 
-                if index is not continuous with the current end index for this group as stored in quant_indices[END]
+                continue;
+                }
+                            
+/*              reason for below if statement is a bit subtle - 
+                if index is not continuous with the current end index for this group
                 that means we are within a quantifier loop and there are elements of other groups in between
-                quant_indices[END] and index. So we reset the start index as well so that we only capture members of this group
-  */              if(index != tempArray[END] + 1)
+                So we reset the start index as well so that we only capture members of this group
+  */            if(index != tempArray[END] + 1)
+                    tempArray[START] = index;
+                
+                if (group_num > last_quantifier_flag)
                     tempArray[START] = index;
                 // just update the ending index                
-                tempArray[END] = index;
-                }
-            max_group_num = (max_group_num > group_num)? max_group_num : group_num;
+                tempArray[END] = index;            
             }
+        quantifier_flags.remove(last_quantifier_flag);
         }
+    
+    private Integer get_max_quantifier_flag(){
+        Integer max = -1;
+        for(Integer quantID: quantifier_flags)
+            max = (max > quantID) ? max : quantID;
+        
+        return (max == -1) ? Integer.MAX_VALUE : max;       
+    }
     
     void processQuantifier(final Integer index, QuantifierToken quant_token){
         Integer quantID = quant_token.getQuantifierGroup();
-        
-        if (CAPTURE_END)
-            {                        
+                        
             if (quant_token.isQuantStop())
-                processQuantStop_captureLast(index, quantID);
+                quantifier_flags.remove(quantID);
             else
-                processQuantStart_captureLast(index, quantID);
-            return;
-            }
-        
-        // CAPTURE_END is not true
-        
-            processQuantStart_captureFirst(index, quantID);
-            if(quant_token.isQuantStop())
-                processQuantStop_captureFirst(quantID);                
-        }
-
-    private void processQuantStart_captureFirst(final Integer index, final Integer quantID)
-        {
-         /*  returns first captured group in a quantifier for a submatch
-         *  eg. given (\d)+ on string 1234, returns group 1 as 1
-         */   
-        Integer[] tempArray;
-
-        tempArray = quantifier_locations.get(quantID);
-        if (tempArray == null)
-            {
-            tempArray = new Integer[2];
-            tempArray[START] = tempArray[END] = index;
-            quantifier_locations.put(quantID, tempArray);
-            } else    // just update the ending index 
-            {
-            // just update the ending index                
-            tempArray[END] = index;
-            }
-        }
-        
-    private void processQuantStop_captureFirst(final Integer quantID){
-        Integer[] group_indices, quant_indices;
-        
-        for(Integer group:Group_locations.keySet()){            
-            if(quantID >= group)
-                continue;
-            
-            group_indices = Group_locations.get(group);
-            if(!has_intersection(quantID, group_indices))
-                continue;
-            
-            quant_indices = quantifier_locations.get(quantID);
-            group_indices[END] = (quant_indices[START] > group_indices[START]) ? quant_indices[START] : group_indices[START];   
-            
-        }
-        quantifier_locations.remove(quantID);
-    }
-    
-        private void processQuantStart_captureLast(final Integer index, final Integer quantID)
-        {
-        /*  works like Java regex API and returns last captured group in a quantifier for a submatch
-         *  eg. given (\d)+ on string 1234, returns group 1 as 4
-         */   
-            Integer[] tempArray = new Integer[2];
-            tempArray[START] = tempArray[END] = index;
-            quantifier_locations.put(quantID, tempArray);
-        }
-
-    private void processQuantStop_captureLast(final Integer index, final Integer quantID){
-        Integer[] group_indices, quant_indices;
-        
-        quant_indices = quantifier_locations.get(quantID);
-        if (quant_indices == null) // we hit quant stop without hitting quant start first so nothing to do
-            return;                           
-        
-        if((quant_indices[END] == quant_indices[START]) && (quant_indices[END] == index)){
-            // we hit a quant-stop immediately after a quant-start without any intervening characters or boundaries
-            // so remove the bogus quantifier index and don't make any changes to the indices
-            quantifier_locations.remove(quantID);
+                quantifier_flags.add(quantID);
             return;
         }
-            
-        quant_indices[END] = index;        
-        quant_indices[START] = (quant_indices[START] + 1 < index) ? quant_indices[START] + 1 : index;
-        
-        for(Integer group:Group_locations.keySet()){            
-            if(quantID >= group)
-                continue;
-            
-            group_indices = Group_locations.get(group);
-            // is this group strictly outside the quantifiers limits
-            if((group_indices[END] < quant_indices[START]) || (group_indices[START] > quant_indices[END]))
-                continue;                        
-            
-            group_indices[START] = quant_indices[START];               
-        }
-        quantifier_locations.remove(quantID);
-    }
 
-    private boolean has_intersection(Integer quantID, Integer[] group_indices){
-        // only called when quantID exists in the quantifier_locations map so
-        // no need to check for null on looking up in map
-        
-        Integer[] quant_locations = quantifier_locations.get(quantID);
-        // is this group strictly outside the quantifiers limits
-        if((group_indices[END] < quant_locations[START]) || (group_indices[START] > quant_locations[END]))
-            return false;
-        
-        // is this group strictly *inside* the quantifiers location
-        if((group_indices[START] > quant_locations[START]) && (group_indices[END] < quant_locations[END]))
-            return false;
-        
-        // if we got here, the group and the quantifier intersect
-            return true;
-    }
-    
     Integer[][] get_matches_from_state() {        
         
         /*This function extracts start and end index for each submatch by
@@ -276,6 +180,9 @@ class Path_to_State {
             return false;
         
         if(obj2.max_group_num != this.max_group_num)
+            return false;
+        
+        if(!obj2.quantifier_flags.equals(this.quantifier_flags))
             return false;
         
         for (Integer group_num = 1; group_num <= max_group_num; group_num++)
