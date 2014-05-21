@@ -52,15 +52,15 @@
 <ul>
 <li> The primary advantage of a non-backtracking implementation is the performance improvement in cases that would cause a backtracking engine to hang. Compared to a DFA, this implementation also supports submatch grouping, backreferences and lookaround with arbitrary regular expressions.
 <p></p>
-<li> The results honour left-most longest matching more closely. Given the expression (nfa|nfa karthik) on a string "nfa karthik", a traditional nfa will match just nfa. JRegexPlus will match "nfa karthik".
-<p></p>
 <li> The general problem of matching regexes that include backreferences is NP-complete so it is still possible to construct combinations of regular expressions and text that will cause exponential blowup. However, this engine's technique has the advantage of other Thompson NFA implementations in that expressions without backreferences will not create exponential blowup. As a result, the number of corner cases with backreferences that blowup the engine are also fewer.
 <p></p>
-<li> There is a slight loss of speed when handling simpler regular expressions. However, this has more to do with the fact that this is a proof of concept demo and does not have any optimizations. With optimizations and tighter code, the core algorithm can be expected to perform at least as well as a backtracking implementation in normal cases while continuing to respond fast in cases that would make a backtracker hang.
+<li> The results honour POSIX-style left-most longest matching. Given the expression (nfa|nfa karthik) on a string "nfa karthik", a traditional nfa will match just nfa. JRegexPlus will match "nfa karthik".
+<p></p>
+<li> For simple regexes, the processing speed is competitive though not necessarily the fastest. However, this has more to do with the fact that this is meant as a proof of concept demo to show that backreferences can work without backtracking and not as a production regex engine. With optimizations and tighter code, the core algorithm can be expected to perform at least as well as a backtracking implementation in normal cases while continuing to respond fast in cases that would make a backtracker hang.
 </ul>
 
 <p></p>
- <h4> Summary of regular-expression constructs </h4>
+ <h4> Summary of JRegexPlus regular-expression constructs </h4>
 
  <table border="0" cellpadding="1" cellspacing="0"
   summary="Regular expression constructs, and what they match">
@@ -240,9 +240,9 @@
 
 <p>The boundary matcher \G is not supported in regexes but the Matcher class searches starting at the end of the previous match by default so the same functionality is available. </p>
 
-<p>Lazy quantifiers and named capturing groups are not supported.</p>
+<p>Lazy quantifiers and named capturing groups are not yet supported.</p>
 
-<p>UNICODE characters and character classes are not yet supported.</p>
+<p>UNICODE characters and UNICODE character classes are not yet supported.</p>
 
 <p>Quotations - \Q and \E are not yet supported.</p>
 
