@@ -137,7 +137,7 @@ class NFASimulator {
             } // for target_state
         } // for current_state
         
-        return eclose(move_states);
+        return move_states;
     }
 
     private Path_to_State_List boundary_close(final Path_to_State_List source_states) 
@@ -193,12 +193,12 @@ class NFASimulator {
             
         } // while stack is not empty
 
-        return eclose(move_states);
+        return move_states;
     }    
 
     private Path_to_State_List process_quantifiers(final Path_to_State_List source_states) 
             throws MatcherException {
-        /* assumes source_states has already been e-closed
+        /* 
            moves to new state based on the boundary at index string_index from the string search_string
            and returns a new set of states along with their related state objects
         */
@@ -226,10 +226,7 @@ class NFASimulator {
             for (Integer target_state : transMatrix.getKeySet(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
                 has_transitions = true;
-                if(!match_token.isQuantifier() && !match_token.isEpsilon()){
-                        retain_state = true;
-                        continue;
-                    }
+                
                     /* found a quantifier token, so process it 
                      * and make the transitions it produces
                      */
@@ -241,13 +238,19 @@ class NFASimulator {
                         // add transition produced by quantifier token
                         boundary_stack.push(target_state);
                         boundary_stack_objects.push(target_state_obj);
-
+                        continue;
                         }
                  if(match_token.isEpsilon()){
                         boundary_stack.push(target_state);
                         boundary_stack_objects.push(current_state_obj);
-                     }   
+                        continue;
+                     }       
+                // if we got here, match_token is not quantifier or epsilon
+                retain_state = true;
                 }
+                else
+                    if(!match_token.isQuantifier() && !match_token.isEpsilon())
+                        retain_state = true;
                     
             } // for target_state
             /* if there were transitions involving non-quantifier tokens for this state

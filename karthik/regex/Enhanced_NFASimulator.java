@@ -156,7 +156,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             } // for target_state
         } // for current_state
         
-        return eclose(move_states, eclose_cache);
+        return move_states;
     }
 
     private void process_backreference(Integer current_state, Integer target_state,
@@ -264,13 +264,13 @@ class Enhanced_NFASimulator extends NFASimulator{
             
         } // while stack is not empty
 
-        return eclose(move_states, eclose_cache);
+        return move_states;
     }    
 
        private Enhanced_Path_to_State_List process_quantifiers(final Enhanced_Path_to_State_List source_states) 
             throws MatcherException {
-        /* assumes source_states has already been e-closed
-           moves to new state based on the boundary at index string_index from the string search_string
+        /* 
+           moves to new state based on the quantifier tokens, if any
            and returns a new set of states along with their related state objects
         */
         Enhanced_Path_to_State_List move_states = new Enhanced_Path_to_State_List();
@@ -299,10 +299,6 @@ class Enhanced_NFASimulator extends NFASimulator{
             for (Integer target_state : transMatrix.getKeySet(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
                 has_transitions = true;
-                if(!match_token.isQuantifier() && !match_token.isEpsilon()){
-                        retain_state = true;
-                        continue;
-                    }
                 
                 if (match_token.isQuantifier()){                    
                     /* found a quantifier token so process it
@@ -315,6 +311,7 @@ class Enhanced_NFASimulator extends NFASimulator{
                         
                         boundary_stack.push(target_state);
                         boundary_stack_objects.push(target_state_obj);
+                        continue;
 
                 } // if match_token is a quantifier
                 
@@ -322,8 +319,10 @@ class Enhanced_NFASimulator extends NFASimulator{
                     {
                     boundary_stack.push(target_state);
                     boundary_stack_objects.push(current_state_obj);
-                    }                    
-
+                    continue;
+                    }        
+                // if we got here, match_token is not quantifier or epsilon
+                retain_state = true;
             } // for target_state
             /* if there were transitions involving non-quantifier tokens for this state
              * or there were no transitions at all (i.e. the finish state)
