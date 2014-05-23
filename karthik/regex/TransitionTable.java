@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  *
- * @author karthik
+ * @author karthrowk
  */
 class TransitionTable implements Cloneable
     {
@@ -50,7 +50,8 @@ class TransitionTable implements Cloneable
         int len = match_string.length();
         List<Map<Integer, Matchable>> temp_list = new ArrayList<>(len + 1);
         
-                
+        EndBackRefRegexToken end_backref_token = new EndBackRefRegexToken(0, len);
+        
         for(int r = 0; r < len; r++){
             token = new RegexToken(RegexTokenNames.CHAR, match_string.charAt(r));
             token.addGroupIDList(groupIDList);
@@ -59,14 +60,65 @@ class TransitionTable implements Cloneable
             temp_list.add(m);
         }
         temp_list.add(new HashMap<Integer, Matchable>());  // add the empty finish state
-        trans_table_list = temp_list;
-        start = 0;
-        finish = len;
         
-        insert_in_parent_table(parent_table, backref_token_row, backref_token_col);
+        trans_table_list = temp_list;
+        
+        // now insert parent table into this table
+        int n1States = parent_table.getNumStates();
+        int backref_states = getNumStates();
+        Matchable tok;
+        
+        expand_table(n1States);
+        contains_backref = parent_table.contains_backref();
+        for (int i = 0; i < n1States; i++)
+            for (int j : parent_table.getKeySet(i))
+                {
+                tok = parent_table.getTransition(i, j);
+                setTransition(i + backref_states, j + backref_states, tok);
+                }
+ 
+        setTransition(len, backref_token_col + backref_states, end_backref_token);
+        
+        start = parent_table.start + backref_states;
+        finish = parent_table.finish + backref_states;        
     }
         
-       int getStart() {
+    TransitionTable get_table_with_backref_expansion_removed(EndBackRefRegexToken end_backref_token){
+        // removes states from expanded back reference string
+        
+        int start_index = end_backref_token.getStartRow(); // assumes this is 0 for now
+        int end_index = end_backref_token.getEndRow();
+        
+        int len = getNumStates();
+        int backref_states = end_index + 1 - start_index;
+        TransitionTable transMatrix = new TransitionTable(len - backref_states);
+        
+        Map<Integer, Matchable> m;
+        Matchable tok;
+        List<Map<Integer, Matchable>> temp_list = new ArrayList<>(len - backref_states);
+                
+        // first copy the transitions to a new list exluding the states from the expanded backref 
+        // and pointing to the correct state numbers
+        for (Integer row = backref_states; row < len; row++)
+            {
+            m = new HashMap<>();
+            temp_list.add(m);
+            for (Integer col : this.getKeySet(row))
+                {
+                tok = getTransition(row, col);
+                m.put(col - backref_states, tok);
+                }
+            }
+
+        transMatrix.trans_table_list = temp_list;
+        transMatrix.start = start - backref_states;
+        transMatrix.finish = finish - backref_states;
+        transMatrix.contains_backref = contains_backref;
+        
+        return transMatrix;
+    }
+   
+    int getStart() {
         return start;
     }
 
@@ -129,8 +181,8 @@ class TransitionTable implements Cloneable
 
         expand_table(n2States - 1);
         // clone matrix from TransitionTable n2 to new matrix
-        // copying is done in 9 cases to cover rows before n2 start row, n2 start row
-        // and rows after n2 start row and same 3 divisions for columns
+        // copying is done in 9 cases to cover rows before n2 start_index row, n2 start_index row
+        // and rows after n2 start_index row and same 3 divisions for columns
         
         for (int i = 0; i < n2Start; i++)
             for (int j = 0; j < n2Start; j++)
@@ -227,7 +279,7 @@ class TransitionTable implements Cloneable
         
         start = getNumStates() - 2;
         finish = getNumStates() - 1;
-        // set e-transitions for new start state
+        // set e-transitions for new start_index state
          setTransition(start, oldStart, eps);
          setTransition(start, n2.getStart() + starting_num_states, eps);        
         
@@ -284,7 +336,7 @@ class TransitionTable implements Cloneable
         
         expand_table(1);
         finish = getNumStates() - 1;
-        // set e-transitions for new start state
+        // set e-transitions for new start_index state
                 
         setTransition(start, finish, eps);        
         
@@ -344,36 +396,7 @@ class TransitionTable implements Cloneable
         finish = brace_finish;
         return this;
     }
-   
-    private TransitionTable insert_in_parent_table(TransitionTable parent_table, 
-            int backref_token_row, int backref_token_col){    
-        
-        Matchable token;
-        
-        int n1States = parent_table.getNumStates();
-        int backref_states = getNumStates(); 
-                
-        expand_table(n1States);
-        contains_backref = parent_table.contains_backref();
-                
-        // copy matrix from TransitionTable in parent_table to this matrix
-        for(int i = 0; i < n1States; i++)
-            for(int j : parent_table.getKeySet(i)){
-                token = parent_table.getTransition(i,j);                
-                setTransition(i + backref_states,j + backref_states,token);             
-            }
-     
-        removeTransition(backref_token_row + backref_states, backref_token_col + backref_states);
-        setTransition(backref_token_row + backref_states, start, eps);
-        setTransition(finish, backref_token_col + backref_states, eps);
-        
-        start = parent_table.start + backref_states;
-        finish = parent_table.finish + backref_states;
-        
-        return this;
-    }
-   
-
+    
     TransitionTable get_transposed_table()
         {
         int numStates = getNumStates();

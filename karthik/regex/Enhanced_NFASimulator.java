@@ -42,67 +42,69 @@ class Enhanced_NFASimulator extends NFASimulator{
     {
         
         Path_to_State longest_success = null;       
-        EnhancedNFA_StateObject current_nfa; 
         EnhancedNFA_StateObject original_nfa;         
         Stack<EnhancedNFA_StateObject> temp_stack = new Stack<>();
         nfa_stack = new Stack<>();
         
         original_nfa = init_simulator();
-        Enhanced_Path_to_State_List states = new Enhanced_Path_to_State_List();
         nfa_stack.push(original_nfa);
         
         search_string = s.toString();
         string_index = region_start = start;
         region_end = end;
         
-        while (string_index < end)
-            {                      
-          while(!nfa_stack.isEmpty())
-              {
-                current_nfa = nfa_stack.pop();
-                transMatrix = current_nfa.trans_table;
-                states = current_nfa.states;
-                eclose_cache = current_nfa.eclose_cache;
-                finish = transMatrix.getFinish();        
-                
-                  // first check boundary if there are any boundary tokens
-                  states = boundary_close(states);
-                   longest_success = get_longest_success(states, longest_success); 
-                   states = process_quantifiers(states);            
-                // now actually read the current character
-                states = move(states);
-                states = process_quantifiers(states);
-                longest_success = get_longest_success(states, longest_success);
-                
-                current_nfa.states = states;
-                if(!states.isEmpty())
-                    temp_stack.push(current_nfa);
+        while (string_index <= end)
+            {
+            while (!nfa_stack.isEmpty())
+                {
+                longest_success = simulate_one_character(longest_success, temp_stack);
                 }
-            string_index++;      
-            while(!temp_stack.isEmpty())
+            string_index++;
+            while (!temp_stack.isEmpty())
                 nfa_stack.push(temp_stack.pop());
             }
 
-        // one final boundary_close in case there is a $ in the regex to match the end of the string 
+        // one final check in case there is a $ in the regex to match the end of the string 
         // original nfa is evaluated again for edge cases where the match starts on the last boundary 
         // before end of string. eg. (?<=foo) on an input string foo
-        // quantifier processing is not needed here
+        
         nfa_stack.push(init_simulator());
         
         while(!nfa_stack.isEmpty())
               {
-                current_nfa = nfa_stack.pop();
-                transMatrix = current_nfa.trans_table;
-                eclose_cache = current_nfa.eclose_cache;
-                states = current_nfa.states;
-                finish = transMatrix.getFinish();        
-          
-            // capture successes if any
-              states = boundary_close(states);  
-              longest_success = get_longest_success(states, longest_success);
+                longest_success = simulate_one_character(longest_success, temp_stack);
               }       
         return longest_success;   
     }
+
+    private Path_to_State simulate_one_character(Path_to_State longest_success, Stack<EnhancedNFA_StateObject> temp_stack)
+            throws MatcherException
+        {
+        EnhancedNFA_StateObject current_nfa;
+        Enhanced_Path_to_State_List states;
+        
+        current_nfa = nfa_stack.pop();
+        transMatrix = current_nfa.trans_table;
+        states = current_nfa.states;
+        eclose_cache = current_nfa.eclose_cache;
+        finish = transMatrix.getFinish();
+        
+        // first check boundary if there are any boundary tokens
+        states = boundary_close(states);
+        states = process_quantifiers(states, transMatrix);
+        longest_success = get_longest_success(states, longest_success);
+        
+    // now actually read the current character
+        states = move(states);
+        states = process_quantifiers(states, transMatrix);
+        longest_success = get_longest_success(states, longest_success);
+    
+        current_nfa.states = states;
+        if (!states.isEmpty())
+            temp_stack.push(current_nfa);
+        
+        return longest_success;
+        }
 
     private Path_to_State get_longest_success(Enhanced_Path_to_State_List states, Path_to_State longest_success)
         {
@@ -139,11 +141,33 @@ class Enhanced_NFASimulator extends NFASimulator{
                 match_token = transMatrix.getTransition(current_state, target_state); 
                 
                     // just comment out this IF block and its contents if backrefs blow everything up
-                    if(match_token.isBackReference()){                        
-                        for (Path_to_State current_state_obj : source_states.get(current_state))                            
-                            process_backreference(current_state, target_state, 
-                                    current_state_obj, match_token);                        
-                    }  
+                    if(match_token.isBackReference()){
+                        BackRefRegexToken backref_token = (BackRefRegexToken) match_token;                            
+                        if (backref_token.isBackref_start()){
+                            for (Path_to_State current_state_obj : source_states.get(current_state))                                  
+                                process_backreference_start(current_state, target_state, current_state_obj, backref_token);
+                        }
+                        else{
+                            EndBackRefRegexToken end_backref_token = (EndBackRefRegexToken) match_token;
+                            TransitionTable new_table = transMatrix.get_table_with_backref_expansion_removed(end_backref_token);
+                              // e-close backref_states with the correct eclose cache and then create new NFA object to push on stack 
+                            EClose_Cache backref_table_eclose_cache = EClose_Cache.create_eclose_cache(new_table);        
+                            int start_index = end_backref_token.getStartRow(); // assumes this is 0 for now
+                            int end_index = end_backref_token.getEndRow();
+                
+                            int backref_num_states = end_index + 1 - start_index;
+
+                            for (Path_to_State current_state_obj : source_states.get(current_state))                                  
+                                process_backreference_end(target_state - backref_num_states, backref_table_eclose_cache,
+                                        new_table, current_state_obj);
+                        }
+                    }
+                    /* if this method gets called after the end of the string, it is only relevant 
+                       to find an endbackref token. So we can skip the processing for other types of tokens
+                    */
+                    if(string_index > search_string.length() - 1)
+                        continue;
+                    
                     if ((!match_token.isBoundaryOrLookaround()) && match_token.matches(search_string, string_index)) {
                         
                         for (Path_to_State current_state_obj : source_states.get(current_state))
@@ -158,13 +182,28 @@ class Enhanced_NFASimulator extends NFASimulator{
         
         return move_states;
     }
-
-    private void process_backreference(Integer current_state, Integer target_state,
-            final Path_to_State current_state_object, final Matchable match_token) throws MatcherException
+   
+   private void process_backreference_end(final Integer target, EClose_Cache backref_table_eclose_cache,
+           TransitionTable new_table, Path_to_State current_state_obj) throws MatcherException
         {
+            
+        Path_to_State target_state_obj = new Path_to_State(current_state_obj);
+        Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
+                  
+        backref_states.put(target, target_state_obj);
+        // just the above line so that current_state is correct
 
-        
-        BackReferenceRegexToken backref_token = (BackReferenceRegexToken) match_token;
+        backref_states = process_quantifiers(backref_states, new_table);
+
+        EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(new_table, 
+                backref_states, backref_table_eclose_cache);
+        nfa_stack.push(new_NFA_and_state);        
+        }
+
+    private void process_backreference_start(final Integer current_state, final Integer target_state,
+            final Path_to_State current_state_object, BackRefRegexToken backref_token) throws MatcherException
+        {
+         
         Path_to_State target_state_obj;
 
         Integer[] backref_indices = current_state_object.get_match_for_group(backref_token.getBackRefID());
@@ -172,18 +211,14 @@ class Enhanced_NFASimulator extends NFASimulator{
         if (backref_indices[0] == -1)  // backref group was empty
             return;
 
-        int backref_length = backref_indices[1] - backref_indices[0] + 1;
-        int remaining_string_length = region_end - string_index + 1;
-
         // simple check below to make sure there are enough characters left in the text to match the backreference
         // if not, we can avoid some work
-        if (backref_length > remaining_string_length)
+        if ((backref_indices[1] - backref_indices[0]) > (region_end - string_index))
             return;
-        
-        // remove this endPeek variable and calculation
-        int endPeek = ((string_index + backref_length) > region_end) ? region_end : (string_index + backref_length);
+                
+        int endPeek = string_index + backref_indices[1] - backref_indices[0];
         String match_string = search_string.substring(backref_indices[0], backref_indices[1] + 1);
-        String peekahead = search_string.substring(string_index, endPeek);
+        String peekahead = search_string.substring(string_index, endPeek + 1);
         
         // peek to see if back ref string is in the search string just ahead
         if(!peekahead.equals(match_string))
@@ -267,7 +302,8 @@ class Enhanced_NFASimulator extends NFASimulator{
         return move_states;
     }    
 
-       private Enhanced_Path_to_State_List process_quantifiers(final Enhanced_Path_to_State_List source_states) 
+       private Enhanced_Path_to_State_List process_quantifiers(final Enhanced_Path_to_State_List source_states
+               , TransitionTable trans_table) 
             throws MatcherException {
         /* 
            moves to new state based on the quantifier tokens, if any
@@ -296,8 +332,8 @@ class Enhanced_NFASimulator extends NFASimulator{
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for quantifier tokens
-            for (Integer target_state : transMatrix.getKeySet(current_state)) {
-                match_token = transMatrix.getTransition(current_state, target_state);
+            for (Integer target_state : trans_table.getKeySet(current_state)) {
+                match_token = trans_table.getTransition(current_state, target_state);
                 has_transitions = true;
                 
                 if (match_token.isQuantifier()){                    

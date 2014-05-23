@@ -356,7 +356,7 @@ public class Pattern {
             // back reference number has to be to a group that has aready been captured
             // i.e. can't have /3 if there have only been 2 groups so far
             
-            int backrefID = ((BackReferenceRegexToken) current).getBackRefID();
+            int backrefID = ((BackRefRegexToken) current).getBackRefID();
             if(backrefID > groupID)
                 throw new ParserException("Regex cannot be parsed: Back Reference to group ID " + 
                         backrefID + " but there have only been " + groupID + " groups so far");

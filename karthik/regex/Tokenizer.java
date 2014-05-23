@@ -286,7 +286,7 @@ class Tokenizer {
                 break;    
             case '1':case '2':case '3':case '4':case '5':case '6':case '7':
                 case '8':case '9':
-                    tokens.add(new BackReferenceRegexToken(Character.getNumericValue(c)));
+                    tokens.add(new BackRefRegexToken(Character.getNumericValue(c)));
                     break;
             default:
                 throw new TokenizerException("Expected control character but found "

@@ -194,10 +194,16 @@ class Path_to_State {
       /*  if(!obj2.quantifier_flags.equals(this.quantifier_flags))
             return false;
         */
-        for (Integer group_num = 1; group_num <= max_group_num; group_num++)
+        for (Integer group_num : Group_locations.keySet())
             {
-            Integer[] obj2_indices = obj2.get_match_for_group(group_num);
-            Integer[] indices = this.get_match_for_group(group_num);
+            if(group_num == 0)
+                continue;
+            
+            Integer[] obj2_indices = obj2.Group_locations.get(group_num);
+            if(obj2_indices == null)
+                return false;
+            
+            Integer[] indices = this.Group_locations.get(group_num);
 
             if ((indices[START] != obj2_indices[START]) || (indices[END] != obj2_indices[END]))
                 return false;

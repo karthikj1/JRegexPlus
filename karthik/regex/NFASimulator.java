@@ -66,7 +66,7 @@ class NFASimulator {
         string_index = region_start = start;
         region_end = end;
 
-        while ((string_index < end) && (!states.isEmpty()))
+        while ((string_index <= end) && (!states.isEmpty()))
             {
 
             // first check boundary if there are any boundary tokens

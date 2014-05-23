@@ -58,7 +58,7 @@ public class Matcher {
             startPos = 0;
         
         do{
-            result = transitions.findOneMatch(search_string, startPos, region_end);
+            result = transitions.findOneMatch(search_string, startPos, region_end - 1);
             if (result == null) {
                 startPos++;                
             } else {                                                

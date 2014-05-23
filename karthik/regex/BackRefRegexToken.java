@@ -10,11 +10,15 @@ package karthik.regex;
  *
  * @author karthik
  */
-public class BackReferenceRegexToken extends RegexToken
+public class BackRefRegexToken extends RegexToken
     {
     private int backRefID;
+
+    public BackRefRegexToken()
+        {
+        }
     
-    BackReferenceRegexToken(int id){
+    BackRefRegexToken(int id){
         backRefID = id;
         type = RegexTokenNames.BACKREFERENCE;
     }
@@ -40,4 +44,10 @@ public class BackReferenceRegexToken extends RegexToken
         sb.append(groupID_toString() + " ");
         return sb.toString();        
     }    
+
+    boolean isBackref_start()
+        {
+        return true;
+        }
+
     }
