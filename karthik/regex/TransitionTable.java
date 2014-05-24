@@ -34,31 +34,34 @@ class TransitionTable implements Cloneable
         }
     
     static TransitionTable get_expanded_backref_table(String match_string, List<Integer> groupIDList, TransitionTable parent_table, 
-            int backref_token_row, int backref_token_col){
+            int backref_token_col){
         
-        return new TransitionTable(match_string, groupIDList, parent_table, backref_token_row, backref_token_col);
+        return new TransitionTable(match_string, groupIDList, parent_table, backref_token_col);
     }
     
     private TransitionTable(String match_string, List<Integer> groupIDList, TransitionTable parent_table, 
-            int backref_token_row, int backref_token_col){
-        // creates transition table to match match_string
-        // used to create table quickly when matching backreferences
-        // since we don't need to go through the full Pattern.compile process for a simple text string
-        RegexToken token;
+            int backref_token_col){
+        /* creates transition table to match match_string - used to create table quickly when matching backreferences
+           since we don't need to go through the full Pattern.compile process for a simple text string
+           In reality, it just puts in one row with a token that matches the full match_string
+           and another row with the end_backref token that will transition back to the original table
+           when the back ref string has matched
+                */
+        RegexToken backref_string_token;
         Map<Integer, Matchable> m;
         contains_backref = false;
-        int len = match_string.length();
-        List<Map<Integer, Matchable>> temp_list = new ArrayList<>(len + 1);
         
-        EndBackRefRegexToken end_backref_token = new EndBackRefRegexToken(0, len);
+        List<Map<Integer, Matchable>> temp_list = new ArrayList<>(2);
         
-        for(int r = 0; r < len; r++){
-            token = new RegexToken(RegexTokenNames.CHAR, match_string.charAt(r));
-            token.addGroupIDList(groupIDList);
-            m = new HashMap<>();
-            m.put(r + 1, token);
-            temp_list.add(m);
-        }
+        EndBackRefRegexToken end_backref_token = new EndBackRefRegexToken(0, 1);
+        
+        backref_string_token = new BackRefString_RegexToken(match_string, end_backref_token);
+        backref_string_token.addGroupIDList(groupIDList);
+    
+        m = new HashMap<>();
+        m.put(1, backref_string_token);
+        temp_list.add(m);
+
         temp_list.add(new HashMap<Integer, Matchable>());  // add the empty finish state
         
         trans_table_list = temp_list;
@@ -77,7 +80,8 @@ class TransitionTable implements Cloneable
                 setTransition(i + backref_states, j + backref_states, tok);
                 }
  
-        setTransition(len, backref_token_col + backref_states, end_backref_token);
+        setTransition(1, backref_token_col + backref_states, end_backref_token);
+        setTransition(1, 0, eps);
         
         start = parent_table.start + backref_states;
         finish = parent_table.finish + backref_states;        

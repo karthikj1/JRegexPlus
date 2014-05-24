@@ -149,6 +149,9 @@ class Enhanced_NFASimulator extends NFASimulator{
                         }
                         else{
                             EndBackRefRegexToken end_backref_token = (EndBackRefRegexToken) match_token;
+                            if(end_backref_token.get_match_pos() != string_index)
+                                continue;
+                            
                             TransitionTable new_table = transMatrix.get_table_with_backref_expansion_removed(end_backref_token);
                               // e-close backref_states with the correct eclose cache and then create new NFA object to push on stack 
                             EClose_Cache backref_table_eclose_cache = EClose_Cache.create_eclose_cache(new_table);        
@@ -157,9 +160,14 @@ class Enhanced_NFASimulator extends NFASimulator{
                 
                             int backref_num_states = end_index + 1 - start_index;
 
-                            for (Path_to_State current_state_obj : source_states.get(current_state))                                  
+                            for (Path_to_State current_state_obj : source_states.get(current_state)){      
+                                Integer[] match_path_end = current_state_obj.get_match_for_group(0);
+                                if (match_path_end[1] != string_index - 1)
+                                    continue;
+                                
                                 process_backreference_end(target_state - backref_num_states, backref_table_eclose_cache,
                                         new_table, current_state_obj);
+                            }
                         }
                     }
                     /* if this method gets called after the end of the string, it is only relevant 
@@ -225,7 +233,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             return;
         
         TransitionTable backref_string_trans_table = TransitionTable.get_expanded_backref_table(match_string, backref_token.getGroupID(),
-                transMatrix, current_state, target_state);
+                transMatrix, target_state);
         
         target_state_obj = new Path_to_State(current_state_object);
         Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
