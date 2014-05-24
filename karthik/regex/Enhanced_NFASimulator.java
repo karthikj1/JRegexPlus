@@ -149,6 +149,10 @@ class Enhanced_NFASimulator extends NFASimulator{
                         }
                         else{
                             EndBackRefRegexToken end_backref_token = (EndBackRefRegexToken) match_token;
+                            /* 
+                            match position inside the end_backref_token has to match current string_index
+                            otherwise it is not a match
+                            */
                             if(end_backref_token.get_match_pos() != string_index)
                                 continue;
                             
@@ -160,7 +164,11 @@ class Enhanced_NFASimulator extends NFASimulator{
                 
                             int backref_num_states = end_index + 1 - start_index;
 
-                            for (Path_to_State current_state_obj : source_states.get(current_state)){      
+                            for (Path_to_State current_state_obj : source_states.get(current_state)){   
+                                /*
+                                    makes sure the path to state object has captured all characters upto
+                                    the current position before hitting the state with the endbackref
+                                */
                                 Integer[] match_path_end = current_state_obj.get_match_for_group(0);
                                 if (match_path_end[1] != string_index - 1)
                                     continue;
@@ -169,6 +177,7 @@ class Enhanced_NFASimulator extends NFASimulator{
                                         new_table, current_state_obj);
                             }
                         }
+                        continue;
                     }
                     /* if this method gets called after the end of the string, it is only relevant 
                        to find an endbackref token. So we can skip the processing for other types of tokens

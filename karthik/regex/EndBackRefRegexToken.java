@@ -34,10 +34,14 @@ class EndBackRefRegexToken extends BackRefRegexToken
         return true;
         }
 
-        boolean isBackref_start()
+     boolean isBackref_start()
         {
         return false;
         }
+
+    public boolean matches(CharSequence s, int pos){
+        return (pos == get_match_pos());
+    }
     
     int get_match_pos(){
         return match_pos;
