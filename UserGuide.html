@@ -50,9 +50,7 @@
 <p>The objects visible to a user are called Matcher and Pattern. First call <code>Pattern.compile(regex_string).</code> <br>
 This returns a Matcher object(let’s call it <code>my_matcher</code>).</p>
 
-<p>You can now use this Matcher object to find matches in a given string by calling <code>my_matcher.match(input_string)</code>.</p>
-
-<p>Unlike the java.util.regex API, calling match once finds all the matches in the given input string. The relevant functions from here are</p>
+<p>You can now use this Matcher object to find matches in a given string by calling <code>my_matcher.find(input_string)</code>.</p>
 
 <p><code>my_matcher.matchCount()</code> - Returns the number of matches found in the last call of <code>my_matcher.matches()</code></p>
 
