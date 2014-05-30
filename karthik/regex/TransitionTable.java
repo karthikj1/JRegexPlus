@@ -294,12 +294,12 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-    TransitionTable plus(Integer quantGroupID){
+    TransitionTable plus(Integer quantGroupID, Integer uniqueID){
         // plus implemented as a+ = a.a*
-        
+        RegexTokenNames tok_type = (uniqueID == Pattern.GREEDY_ID) ? RegexTokenNames.PLUS : RegexTokenNames.LAZY_PLUS;
         TransitionTable temp = this.clone();
         expand_table(1);
-        setTransition(finish, getNumStates() - 1, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, true));
+        setTransition(finish, getNumStates() - 1, new QuantifierToken(tok_type, quantGroupID, true, uniqueID));
         finish = getNumStates() - 1;
         
         // convert temp into temp.star
@@ -308,10 +308,10 @@ class TransitionTable implements Cloneable
         int oldStart = temp.getStart();        
         temp.expand_table(1);
         temp.finish = temp.getNumStates() - 1;
-   
-        temp.setTransition(oldStart, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
-        temp.setTransition(oldFinish, temp.finish, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, false));
-        temp.setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.PLUS, quantGroupID, true)); 
+        
+        temp.setTransition(oldStart, temp.finish, new QuantifierToken(tok_type, quantGroupID, false, uniqueID));
+        temp.setTransition(oldFinish, temp.finish, new QuantifierToken(tok_type, quantGroupID, false, uniqueID));
+        temp.setTransition(oldFinish, oldStart, new QuantifierToken(tok_type, quantGroupID, true, uniqueID)); 
    
         // concat temp now that it has been made into star
         concat(temp);
@@ -320,16 +320,17 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-    TransitionTable star(Integer quantGroupID){
+    TransitionTable star(Integer quantGroupID, Integer uniqueID){
         // same as question but with one e-transition more and with quantifier markers instead of eps
+        RegexTokenNames tok_type = (uniqueID == Pattern.GREEDY_ID) ? RegexTokenNames.STAR : RegexTokenNames.LAZY_STAR;
         int oldFinish = getFinish();
         int oldStart = getStart();        
         expand_table(1);
         finish = getNumStates() - 1;
         
-        setTransition(start, finish, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, false));
-        setTransition(oldFinish, finish, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, false));
-        setTransition(oldFinish, oldStart, new QuantifierToken(RegexTokenNames.STAR, quantGroupID, true)); 
+        setTransition(start, finish, new QuantifierToken(tok_type, quantGroupID, false, uniqueID));
+        setTransition(oldFinish, finish, new QuantifierToken(tok_type, quantGroupID, false, uniqueID));
+        setTransition(oldFinish, oldStart, new QuantifierToken(tok_type, quantGroupID, true, uniqueID)); 
         
        return this;
     }
@@ -350,24 +351,34 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-   TransitionTable brace(final int min,final int max, Integer quantGroupID){ 
+    TransitionTable lazy_question(Integer uniqueID){
+        //TODO: implement lazy question quantifier
+        return question();
+    }
+    
+   TransitionTable brace(final int min,final int max, Integer quantGroupID, Integer uniqueID){ 
         // max = 0 implies max is infinity       
                
        TransitionTable temp;
+       RegexTokenNames tok_type = (uniqueID == Pattern.GREEDY_ID) ? RegexTokenNames.BRACE : RegexTokenNames.LAZY_BRACE;
        
         if ((min == 0) && (max == 0)){
-            star(quantGroupID);
+            star(quantGroupID, uniqueID);
             return this;
         }         
             
         temp = this.clone();
         temp.expand_table(1);
         temp.setTransition(temp.finish, temp.getNumStates() - 1, 
-                new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, true));
+                new QuantifierToken(tok_type, quantGroupID, true, uniqueID));
         temp.finish = temp.getNumStates() - 1;
         
-        if(min == 0)
-           question();                   
+        if(min == 0){
+           if(uniqueID == Pattern.GREEDY_ID) 
+               question();
+            else    
+               lazy_question(uniqueID);
+        }
 
         expand_table(1);  // add finish state but don't set it as finish state yet
         int brace_finish = getNumStates() - 1;        
@@ -377,25 +388,25 @@ class TransitionTable implements Cloneable
         }
         
         expand_table(1);
-        setTransition(finish, getNumStates() - 1, new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, true));
+        setTransition(finish, getNumStates() - 1, new QuantifierToken(tok_type, quantGroupID, true, uniqueID));
         finish = getNumStates() - 1;
         for(int r = 2; r <= min; r++)
             concat(temp);        
             
         if(max == 0){   // n1 is repeated min or more times, no upper limit
-            concat(temp.star(quantGroupID));
+            concat(temp.star(quantGroupID, uniqueID));
             return this;
         }
         
         // sets transition after min repeats
-        setTransition(finish, brace_finish, new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, false));
+        setTransition(finish, brace_finish, new QuantifierToken(tok_type, quantGroupID, false, uniqueID));
         
         for(int r = min + 1; r <= max; r++){
             // n1 is repeated between min and max times               
             // set e-transitions so that NFA state can transition to finish
             // anywhere between min and max times
             concat(temp);
-            setTransition(getFinish(), brace_finish, new QuantifierToken(RegexTokenNames.BRACE, quantGroupID, false));
+            setTransition(getFinish(), brace_finish, new QuantifierToken(tok_type, quantGroupID, false, uniqueID));
         }
         finish = brace_finish;
         return this;

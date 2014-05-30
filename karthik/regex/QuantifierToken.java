@@ -12,15 +12,18 @@ package karthik.regex;
  */
 public class QuantifierToken extends RegexToken
     {
-    Integer maxGroupID;
-    boolean start = false;
+    private Integer maxGroupID;
+    private final boolean start;
+    private final Integer uniqueID;
 
-    public QuantifierToken(RegexTokenNames myType, Integer id, boolean quant_start)
+    public QuantifierToken(RegexTokenNames myType, Integer id, boolean quant_start, Integer ID)
         {
+        // ID is either a unique ID if this is a lazy quantifier or Pattern.GREEDY_ID if it is greedy
             type = myType;
             start = quant_start;
             maxGroupID = id;
-        }
+            uniqueID = ID;
+        }    
     
     boolean isQuantStop(){
         return (start == false);
@@ -34,7 +37,16 @@ public class QuantifierToken extends RegexToken
         return false;
     }            
     
-        public String toString()
+    boolean is_lazy(){
+        // uniqueID is Pattern.GREEDY_ID if this is greedy, anything else means it is lazy
+        return (uniqueID != Pattern.GREEDY_ID);
+    }
+    
+    Integer getUniqueID(){
+        return uniqueID;
+    }
+    
+    public String toString()
     {
         StringBuilder sb = new StringBuilder("");
         

@@ -76,7 +76,6 @@ public class Matcher {
    
     
     public boolean matchEntireString(final String s) throws MatcherException{
-        // fix find function so it doesn't keep trying for matchEntireString case
         
         if(!find(s, true))  // no find found
             return false;

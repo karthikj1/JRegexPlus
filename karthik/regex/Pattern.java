@@ -39,6 +39,10 @@ public class Pattern {
     
     private static int groupID = 0;   // static counter to generate unique group ID
     
+    // static counter to generate unique ID's for lazy quantifiers and ID for all greedy quantifiers
+    private static Integer lazy_quant_uniqueID = 0; 
+    static Integer GREEDY_ID = -1;
+    
      // groupIDList maintains group ID path of parser instances that recursively called this instance
     private List<Integer> groupIDList; 
     private CharSequence regex = "";  // regex String being parsed by this pattern instance
@@ -229,7 +233,7 @@ public class Pattern {
             return true;
         
         if (current.getOpType() == RegexToken.OpTypes.QUANTIFIER) {
-            // pop one item and push subtree with quantifier operator
+            // pop one item and push table with quantifier operator
             if(debug_create_tree){
             Tree<RegexToken> left = debug_tree_stack.pop();
             debug_tree_stack.push(new Tree<RegexToken>(current, left, null));
@@ -237,18 +241,31 @@ public class Pattern {
             TransitionTable trans_table = matcherStack.pop();            
             switch(current.getType()){
                 case STAR:
-                    matcherStack.push(trans_table.star(getMaxGroupID()));
+                    matcherStack.push(trans_table.star(getMaxGroupID(), GREEDY_ID));
                     break;
-                case QUESTION:
+                case QUESTION: 
                     matcherStack.push(trans_table.question());
                     break;
-                case PLUS:
-                    matcherStack.push(trans_table.plus(getMaxGroupID()));
+                case PLUS: 
+                    matcherStack.push(trans_table.plus(getMaxGroupID(), GREEDY_ID));
                     break;
-                case BRACE:
+                case BRACE: 
                     matcherStack.push(trans_table.brace(((BraceRegexToken) current).min, 
-                            ((BraceRegexToken) current).max, getMaxGroupID()));
+                            ((BraceRegexToken) current).max, getMaxGroupID(), GREEDY_ID));
                     break;                
+                case LAZY_STAR:
+                    matcherStack.push(trans_table.star(getMaxGroupID(), lazy_quant_uniqueID++));                    
+                    break;
+                case LAZY_QUESTION:
+                    matcherStack.push(trans_table.lazy_question(lazy_quant_uniqueID++));
+                    break;
+                case LAZY_PLUS:
+                    matcherStack.push(trans_table.plus(getMaxGroupID(), lazy_quant_uniqueID++));
+                    break;
+                case LAZY_BRACE:
+                    matcherStack.push(trans_table.brace(((BraceRegexToken) current).min, 
+                            ((BraceRegexToken) current).max, getMaxGroupID(), lazy_quant_uniqueID++));
+                    break;
                 default:
                     throw new ParserException("Reached unknown unary operator" + current.toString());                    
             }
@@ -387,4 +404,9 @@ public class Pattern {
         
         return maxGroupID;
     }
+
+    static Integer get_num_lazy_quantifiers()
+        {
+        return lazy_quant_uniqueID;
+        }
     }

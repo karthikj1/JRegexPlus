@@ -14,12 +14,14 @@ package karthik.regex;
 class BraceRegexToken extends RegexToken{
     int min;    
     int max;  // value of 0 for max means upper limit is infinity 
+    boolean lazy;  // true if this is a lazy quantifier
     
     
-    BraceRegexToken(int lower, int upper){
+    BraceRegexToken(int lower, int upper, boolean is_lazy){
         min = lower;
         max = upper;
-        type = RegexTokenNames.BRACE;
+        lazy = is_lazy;
+        type = (lazy) ? RegexTokenNames.LAZY_BRACE : RegexTokenNames.BRACE;        
     }
     
     public String toString(){

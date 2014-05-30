@@ -58,6 +58,7 @@ class RegexToken implements Matchable{
         switch(getType())
         {
             case STAR: case PLUS: case QUESTION: case BRACE:
+            case LAZY_STAR: case LAZY_PLUS: case LAZY_QUESTION: case LAZY_BRACE:    
                 return OpTypes.QUANTIFIER;
             case OR: case AND:
                 return OpTypes.BINARY;            

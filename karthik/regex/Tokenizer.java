@@ -89,14 +89,23 @@ class Tokenizer {
                         break;
                     
                     case '?':
-                        tokens.add(new RegexToken(RegexTokenNames.QUESTION));
+                        if(is_lazy_quantifier())
+                             tokens.add(new RegexToken(RegexTokenNames.LAZY_QUESTION));
+                        else
+                             tokens.add(new RegexToken(RegexTokenNames.QUESTION));
                         break;    
                     case '+':
-                        tokens.add(new RegexToken(RegexTokenNames.PLUS));
+                        if(is_lazy_quantifier())
+                             tokens.add(new RegexToken(RegexTokenNames.LAZY_PLUS));
+                        else
+                            tokens.add(new RegexToken(RegexTokenNames.PLUS));
                         break;
                         
                     case '*':
-                        tokens.add(new RegexToken(RegexTokenNames.STAR));
+                        if(is_lazy_quantifier())
+                             tokens.add(new RegexToken(RegexTokenNames.LAZY_STAR));
+                        else
+                            tokens.add(new RegexToken(RegexTokenNames.STAR));
                         break;
                     case '^':
                         tokens.add(new BoundaryRegexToken(RegexTokenNames.LINE_START));
@@ -119,6 +128,14 @@ class Tokenizer {
                     + indexPos + " - " + siobe.getMessage());
         }
         
+    }
+    
+    private boolean is_lazy_quantifier(){
+        if(inputString.charAt(indexPos) == '?'){
+            indexPos++;
+            return true;
+        }
+        return false;
     }
     
     private CharClassRegexToken parseCharClass()
@@ -392,9 +409,14 @@ class Tokenizer {
             if (currentChar == ',') {
                 upper = 0;
             }
-            if(currentChar == '}')
-                return new BraceRegexToken(lower, lower);
-            
+            if (currentChar == '}')
+                {
+                if (is_lazy_quantifier())
+                     return new BraceRegexToken(lower, lower, true);
+                else
+
+                    return new BraceRegexToken(lower, lower, false);
+                }
             while (Character.isDigit(currentChar = inputString.charAt(indexPos++))) {
                 upper = 10 * upper + Character.getNumericValue(currentChar);
             }
@@ -408,8 +430,11 @@ class Tokenizer {
         if((upper < lower) && (upper !=0))
             throw new TokenizerException("Upper limit in braces must be greater than lower");
         
-        return new BraceRegexToken(lower, upper);
-    }
+        if(is_lazy_quantifier())
+            return new BraceRegexToken(lower, upper, true);
+        else
+            return new BraceRegexToken(lower, upper, false);        
+    }   
     
     private RegexToken parseGroup() throws TokenizerException{
         // only called when ( has been found so assumes it is inside a group

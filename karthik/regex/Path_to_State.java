@@ -21,12 +21,15 @@ class Path_to_State {
      * This object stores the path taken to each state to enable submatch recovery
      * Each object contains the string matched so far and the groups to which 
      * each character of that string belongs.
-     *         
-     *  GroupIDList.get(r) contains the list of group ID's for the r'th character 
-     *  in the string being matched.        
+     *               
      *******************************/
     private Map<Integer, Integer[]> Group_locations;
     private List<Integer> quantifier_flags;
+    
+    // keeps track of how many characters have been matched by each lazy quantifier
+    private List<Integer> lazy_quantifier_flags;
+    private Map<Integer, Integer> lazy_quantifier_count;
+    
     private Integer startIndex = -1;
     private Integer endIndex = -1;
     private Integer max_group_num = -1;
@@ -38,6 +41,8 @@ class Path_to_State {
     Path_to_State() {
         Group_locations = new HashMap<>();
         quantifier_flags = new ArrayList<>();
+        lazy_quantifier_flags = new ArrayList<>();
+        lazy_quantifier_count = new HashMap<>();
     }
 
     Path_to_State(Path_to_State copyObj) {
@@ -45,12 +50,21 @@ class Path_to_State {
         
         Group_locations = new HashMap<>();
         quantifier_flags = new ArrayList<>(copyObj.quantifier_flags);
+        lazy_quantifier_flags = new ArrayList<>(copyObj.lazy_quantifier_flags);
+        lazy_quantifier_count = new HashMap<>();
         
+        // copy map with locations of groups
         for(Integer group_num : copyObj.Group_locations.keySet()){    
             tempArray = copyObj.Group_locations.get(group_num);
             Group_locations.put(group_num, Arrays.copyOf(tempArray, 2));
         }                 
       
+        // copy map with lazy quantifiers counters
+        for(Integer group_num : copyObj.lazy_quantifier_count.keySet()){    
+            int count = copyObj.lazy_quantifier_count.get(group_num);
+            lazy_quantifier_count.put(group_num, new Integer(count));
+        }                 
+
          this.startIndex = copyObj.startIndex;
          this.endIndex = copyObj.endIndex;      
          this.max_group_num = copyObj.max_group_num;
@@ -66,6 +80,14 @@ class Path_to_State {
         endIndex = index;
         
         Integer last_quantifier_flag = get_max_quantifier_flag();
+        // update counter for any lazy quantifiers that are active
+        for(Integer uniqueID: lazy_quantifier_flags){
+            Integer current_count = lazy_quantifier_count.get(uniqueID);
+            if(current_count == null) // first character using this lazy quantifier
+                lazy_quantifier_count.put(uniqueID, 1);
+            else
+                lazy_quantifier_count.put(uniqueID, current_count + 1);
+        }
         
         // now update indices for each group
         for (Integer group_num : groupID)
@@ -113,13 +135,20 @@ class Path_to_State {
     
     void processQuantifier(final Integer index, QuantifierToken quant_token){
         Integer quantID = quant_token.getQuantifierGroup();
+        Integer uniqueID = quant_token.getUniqueID();
                         
-            if (quant_token.isQuantStop())
+            if (quant_token.isQuantStop()){
                 quantifier_flags.remove(quantID);
-            else
+                if (quant_token.is_lazy())
+                    lazy_quantifier_flags.remove(uniqueID);
+            }
+            else{
                 if(!quantifier_flags.contains(quantID))
-         // seems to work without it but not sure if above if is needed - check this       
+         // TODO: seems to work without it but not sure if above if is needed - check this      
                         quantifier_flags.add(quantID);
+                if(quant_token.is_lazy() && (!lazy_quantifier_flags.contains(uniqueID)))
+                    lazy_quantifier_flags.add(uniqueID);
+            }
             return;
         }
 
