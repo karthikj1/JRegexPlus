@@ -254,13 +254,13 @@ public class Pattern {
                             ((BraceRegexToken) current).max, getMaxGroupID(), GREEDY_ID));
                     break;                
                 case LAZY_STAR:
-                    matcherStack.push(trans_table.star(getMaxGroupID(), lazy_quant_uniqueID++));                    
+                    matcherStack.push(trans_table.lazy_star(getMaxGroupID(), lazy_quant_uniqueID++));                    
                     break;
                 case LAZY_QUESTION:
-                    matcherStack.push(trans_table.lazy_question(lazy_quant_uniqueID++));
+                    matcherStack.push(trans_table.lazy_question(getMaxGroupID(), lazy_quant_uniqueID++));
                     break;
                 case LAZY_PLUS:
-                    matcherStack.push(trans_table.plus(getMaxGroupID(), lazy_quant_uniqueID++));
+                    matcherStack.push(trans_table.lazy_plus(getMaxGroupID(), lazy_quant_uniqueID++));
                     break;
                 case LAZY_BRACE:
                     matcherStack.push(trans_table.brace(((BraceRegexToken) current).min, 

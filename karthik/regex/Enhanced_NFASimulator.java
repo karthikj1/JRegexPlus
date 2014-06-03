@@ -22,6 +22,11 @@ class Enhanced_NFASimulator extends NFASimulator{
          
     private Stack<EnhancedNFA_StateObject> nfa_stack;
     
+    /* below flag indicates if backreference can match an empty string
+       
+    */
+    private final boolean BACKREF_MATCHES_EMPTY_STRING = false;
+    
     Enhanced_NFASimulator(TransitionTable start_nfa){
         super(start_nfa);
     }
@@ -120,8 +125,8 @@ class Enhanced_NFASimulator extends NFASimulator{
                 {
                     if (longest_success == null)
                         longest_success = finish_state;
-                    else if (finish_state.resultStringLength() > longest_success.resultStringLength())
-                        longest_success = finish_state;
+                    else 
+                        longest_success = longest_success.compare_finish_states(finish_state);
                 }
         return longest_success;
         }
@@ -145,7 +150,7 @@ class Enhanced_NFASimulator extends NFASimulator{
                         BackRefRegexToken backref_token = (BackRefRegexToken) match_token;                            
                         if (backref_token.isBackref_start()){
                             for (Path_to_State current_state_obj : source_states.get(current_state))                                  
-                                process_backreference_start(current_state, target_state, current_state_obj, backref_token);
+                                process_backreference_start(target_state, current_state_obj, backref_token);
                         }
                         else{
                             EndBackRefRegexToken end_backref_token = (EndBackRefRegexToken) match_token;
@@ -155,27 +160,7 @@ class Enhanced_NFASimulator extends NFASimulator{
                             */
                             if(end_backref_token.get_match_pos() != string_index)
                                 continue;
-                            
-                            TransitionTable new_table = transMatrix.get_table_with_backref_expansion_removed(end_backref_token);
-                              // e-close backref_states with the correct eclose cache and then create new NFA object to push on stack 
-                            EClose_Cache backref_table_eclose_cache = EClose_Cache.create_eclose_cache(new_table);        
-                            int start_index = end_backref_token.getStartRow(); // assumes this is 0 for now
-                            int end_index = end_backref_token.getEndRow();
-                
-                            int backref_num_states = end_index + 1 - start_index;
-
-                            for (Path_to_State current_state_obj : source_states.get(current_state)){   
-                                /*
-                                    makes sure the path to state object has captured all characters upto
-                                    the current position before hitting the state with the endbackref
-                                */
-                                Integer[] match_path_end = current_state_obj.get_match_for_group(0);
-                                if (match_path_end[1] != string_index - 1)
-                                    continue;
-                                
-                                process_backreference_end(target_state - backref_num_states, backref_table_eclose_cache,
-                                        new_table, current_state_obj);
-                            }
+                            process_backreference_end(current_state, target_state, source_states, end_backref_token);                            
                         }
                         continue;
                     }
@@ -200,24 +185,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         return move_states;
     }
    
-   private void process_backreference_end(final Integer target, EClose_Cache backref_table_eclose_cache,
-           TransitionTable new_table, Path_to_State current_state_obj) throws MatcherException
-        {
-            
-        Path_to_State target_state_obj = new Path_to_State(current_state_obj);
-        Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
-                  
-        backref_states.put(target, target_state_obj);
-        // just the above line so that current_state is correct
-
-        backref_states = process_quantifiers(backref_states, new_table);
-
-        EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(new_table, 
-                backref_states, backref_table_eclose_cache);
-        nfa_stack.push(new_NFA_and_state);        
-        }
-
-    private void process_backreference_start(final Integer current_state, final Integer target_state,
+    private void process_backreference_start(final Integer target_state,
             final Path_to_State current_state_object, BackRefRegexToken backref_token) throws MatcherException
         {
          
@@ -227,10 +195,16 @@ class Enhanced_NFASimulator extends NFASimulator{
 
         if (backref_indices[0] == -1)  // backref group was empty
             return;
-
+        
+        int backref_length = backref_indices[1] - backref_indices[0];
+        
+/*      TODO: put in something so that backreferences do not match an empty string  
+        if((backref_length == 0) && !BACKREF_MATCHES_EMPTY_STRING)
+            return;
+  */
         // simple check below to make sure there are enough characters left in the text to match the backreference
         // if not, we can avoid some work
-        if ((backref_indices[1] - backref_indices[0]) > (region_end - string_index))
+        if (backref_length > (region_end - string_index))
             return;
                 
         int endPeek = string_index + backref_indices[1] - backref_indices[0];
@@ -261,7 +235,45 @@ class Enhanced_NFASimulator extends NFASimulator{
 
         }
 
-    private Enhanced_Path_to_State_List boundary_close(final Enhanced_Path_to_State_List source_states) 
+      private void process_backreference_end(final Integer current_state, final Integer target_state,
+           Enhanced_Path_to_State_List source_states, EndBackRefRegexToken end_backref_token) throws MatcherException
+        {
+
+        TransitionTable new_table = transMatrix.get_table_with_backref_expansion_removed(end_backref_token);
+        // e-close backref_states with the correct eclose cache and then create new NFA object to push on stack 
+        EClose_Cache backref_table_eclose_cache = EClose_Cache.create_eclose_cache(new_table);
+        int start_index = end_backref_token.getStartRow(); // assumes this is 0 for now
+        int end_index = end_backref_token.getEndRow();
+
+        int backref_num_states = end_index + 1 - start_index;
+        Integer target = target_state - backref_num_states;
+
+        for (Path_to_State current_state_obj : source_states.get(current_state))
+            {
+            /*
+             makes sure the path to state object has captured all characters upto
+             the current position before hitting the state with the endbackref
+             */
+// TODO: Below test for match string length could be replaced with something more efficient
+            Integer[] match_path_end = current_state_obj.get_match_for_group(0);
+            if (match_path_end[1] != string_index - 1)
+                continue;
+
+            Path_to_State target_state_obj = new Path_to_State(current_state_obj);
+            Enhanced_Path_to_State_List backref_states = new Enhanced_Path_to_State_List();
+
+            backref_states.put(target, target_state_obj);
+            // just the above line so that current_state is correct
+
+            backref_states = process_quantifiers(backref_states, new_table);
+
+            EnhancedNFA_StateObject new_NFA_and_state = new EnhancedNFA_StateObject(new_table,
+                    backref_states, backref_table_eclose_cache);
+            nfa_stack.push(new_NFA_and_state);
+            }
+        }
+
+      private Enhanced_Path_to_State_List boundary_close(final Enhanced_Path_to_State_List source_states) 
             throws MatcherException {
         /* assumes source_states has already been e-closed
            moves to new state based on the boundary at index string_index from the string search_string

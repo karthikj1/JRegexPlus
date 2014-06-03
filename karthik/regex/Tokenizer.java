@@ -131,6 +131,9 @@ class Tokenizer {
     }
     
     private boolean is_lazy_quantifier(){
+        if(indexPos >= inputString.length())
+            return false;
+        
         if(inputString.charAt(indexPos) == '?'){
             indexPos++;
             return true;

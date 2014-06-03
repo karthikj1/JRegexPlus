@@ -71,8 +71,8 @@ class NFASimulator {
 
             // first check boundary if there are any boundary tokens
             states = boundary_close(states);
-            longest_success = get_longest_success(states, longest_success);
             states = process_quantifiers(states);            
+            longest_success = get_longest_success(states, longest_success);
             // now actually read the current character
             states = move(states);
             states = process_quantifiers(states);
@@ -101,15 +101,20 @@ class NFASimulator {
         /* checks if states contains any finish states and return the longer of
          * the finish state or the current longest success.
          * returns original longest_success if there is no finish state in the Map states
-        */
+         */
         Path_to_State finish_state = states.get(finish);
+        if (finish_state == null)
+            return longest_success;
+
         // capture successes if any
-        if(finish_state != null) {            
-            if(longest_success == null)
-                longest_success = finish_state;
-            else if(finish_state.resultStringLength() > longest_success.resultStringLength())
-                longest_success = finish_state;
+        if (longest_success == null){
+            return finish_state;
         }
+        
+//        if (finish_state.resultStringLength() > longest_success.resultStringLength())
+//            longest_success = finish_state;
+        longest_success = longest_success.compare_finish_states(finish_state);
+        
         return longest_success;
         }
     

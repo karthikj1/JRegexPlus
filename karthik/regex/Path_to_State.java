@@ -202,6 +202,53 @@ class Path_to_State {
         return Arrays.copyOf(tempArray, 2);
     }
    
+    Path_to_State compare_finish_states(Path_to_State new_finish){
+        /* compares this object to another Path_to_State and returns the object
+           that has the longer result after accounting for lazy quantifiers
+           IF the objects have the same length, it returns this object
+           NOTE: this method is only meaningful when called on states that are finish states
+        */
+   
+        int num_lazy_quantifiers = Pattern.get_num_lazy_quantifiers();
+        if(num_lazy_quantifiers == 0){
+            if (new_finish.resultStringLength() > this.resultStringLength())
+                return new_finish;
+            else
+                return this;
+        }
+        
+        for(Integer lazy_flag_ID = 0; lazy_flag_ID < num_lazy_quantifiers; lazy_flag_ID++){
+            Integer this_count = this.lazy_quantifier_count.get(lazy_flag_ID);
+            Integer new_finish_count = new_finish.lazy_quantifier_count.get(lazy_flag_ID);
+            // nothing to compare if both are null
+            if((this_count == null) && (new_finish_count== null))
+                continue;
+            // if only one of them is null, it wins since it's lazy quantifier count is 0 
+            // and the other one is non-zero
+            if(this_count == null)
+                return this;
+            if(new_finish_count == null)
+                return new_finish;
+            /* if both of them used this lazy quantifier to match, the smaller one wins */
+            if(this_count < new_finish_count)
+                return this;
+            if(new_finish_count < this_count)
+                return new_finish;
+            /* if we got here, both paths used the same number of characters for the lazy
+               quantifier with ID lazy_flag_ID, so we do nothing and the loop continues to 
+               check the next lazy ID, if any
+            */
+        }
+        
+        /* If we got here, both paths used the same number of characters to match 
+            each lazy quantifier, so we choose the one with the longest match        
+        */
+            if (new_finish.resultStringLength() > this.resultStringLength())
+                return new_finish;
+            else
+                return this;       
+    }
+    
     int resultStringLength(){
         if(startIndex == -1 || endIndex == -1)
             return 0;

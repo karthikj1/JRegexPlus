@@ -335,6 +335,7 @@ class TransitionTable implements Cloneable
        return this;
     }
     
+    
     TransitionTable question(){
         
         int oldFinish = getFinish();
@@ -351,10 +352,41 @@ class TransitionTable implements Cloneable
         return this;
     }
     
-    TransitionTable lazy_question(Integer uniqueID){
+    TransitionTable lazy_question(Integer quantGroupID, Integer uniqueID)
+        {
         //TODO: implement lazy question quantifier
-        return question();
-    }
+        question();
+        make_lazy(quantGroupID, uniqueID, RegexTokenNames.LAZY_QUESTION);
+        return this;
+        }
+
+    TransitionTable lazy_star(Integer quantGroupID, Integer uniqueID)
+        {
+        //TODO: implement lazy question quantifier
+        star(quantGroupID, uniqueID);
+        make_lazy(quantGroupID, uniqueID, RegexTokenNames.LAZY_STAR);
+        return this;
+        }
+
+    TransitionTable lazy_plus(Integer quantGroupID, Integer uniqueID)
+        {
+        //TODO: implement lazy question quantifier
+        plus(quantGroupID, uniqueID);
+        make_lazy(quantGroupID, uniqueID, RegexTokenNames.LAZY_PLUS);
+        return this;
+        }
+
+    private void make_lazy(Integer quantGroupID, Integer uniqueID, RegexTokenNames tok_type){
+        /* called by star, lazy or question methods to add an extra transition that
+           converts them into their lazy equivalent - operates on this TransitionTable       
+        */       
+        int oldStart = getStart();        
+
+        // set first start quantifier so that the lazy quantifier counts the number of chars it eats
+        expand_table(1);
+        start = getNumStates() - 1;
+        setTransition(start, oldStart, new QuantifierToken(tok_type, quantGroupID, true, uniqueID));                
+    }     
     
    TransitionTable brace(final int min,final int max, Integer quantGroupID, Integer uniqueID){ 
         // max = 0 implies max is infinity       
@@ -363,7 +395,10 @@ class TransitionTable implements Cloneable
        RegexTokenNames tok_type = (uniqueID == Pattern.GREEDY_ID) ? RegexTokenNames.BRACE : RegexTokenNames.LAZY_BRACE;
        
         if ((min == 0) && (max == 0)){
-            star(quantGroupID, uniqueID);
+            if(uniqueID == Pattern.GREEDY_ID)
+                star(quantGroupID, uniqueID);
+            else
+                lazy_star(quantGroupID, uniqueID);
             return this;
         }         
             
@@ -377,9 +412,12 @@ class TransitionTable implements Cloneable
            if(uniqueID == Pattern.GREEDY_ID) 
                question();
             else    
-               lazy_question(uniqueID);
+               lazy_question(quantGroupID, uniqueID);
         }
-
+        
+        if(max == 1)  // max = 1 means this is just question operator
+            return this; 
+        
         expand_table(1);  // add finish state but don't set it as finish state yet
         int brace_finish = getNumStates() - 1;        
         
@@ -394,7 +432,10 @@ class TransitionTable implements Cloneable
             concat(temp);        
             
         if(max == 0){   // n1 is repeated min or more times, no upper limit
-            concat(temp.star(quantGroupID, uniqueID));
+            if(uniqueID == Pattern.GREEDY_ID)
+                concat(temp.star(quantGroupID, uniqueID));
+            else
+                concat(temp.lazy_star(quantGroupID, uniqueID));            
             return this;
         }
         
