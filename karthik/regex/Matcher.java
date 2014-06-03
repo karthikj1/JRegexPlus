@@ -7,7 +7,9 @@
 package karthik.regex;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -20,6 +22,7 @@ public class Matcher {
     private CharSequence search_string;
     private int startPos;
     private int region_end;
+    private Map<String, Integer> group_names = new HashMap<>();
     
     Matcher(TransitionTable m){
         
@@ -30,6 +33,11 @@ public class Matcher {
         
         results = new ArrayList<>();
         startPos = 0;
+    }
+
+    Matcher(TransitionTable m, Map<String, Integer> names){        
+        this(m);
+        group_names = names;
     }
 
     public Matcher reset(){        
@@ -123,6 +131,15 @@ public class Matcher {
         return group(0, index);
     }        
 
+     public String group(CharSequence group_name) throws MatcherException{
+
+        Integer group_index = group_names.get(group_name.toString());
+        if(group_index == null)
+            throw new MatcherException("Group " + group_name + " does not exist!");
+        
+        return group(group_index);
+    }        
+     
     public int groupCount(int... matchIndex) throws MatcherException{
         int index = 0;
         if(matchIndex.length > 0){

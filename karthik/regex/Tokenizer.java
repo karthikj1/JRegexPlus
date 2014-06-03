@@ -304,6 +304,9 @@ class Tokenizer {
             case '(':
                 tokens.add(new RegexToken(RegexTokenNames.CHAR, c));
                 break;    
+            case 'k':
+                tokens.add(new BackRefRegexToken(handleNamedBackReference()));
+                break;
             case '1':case '2':case '3':case '4':case '5':case '6':case '7':
                 case '8':case '9':
                     tokens.add(new BackRefRegexToken(Character.getNumericValue(c)));
@@ -312,6 +315,13 @@ class Tokenizer {
                 throw new TokenizerException("Expected control character but found "
                         + "\\" + c + " at index position " + indexPos);
         }
+    }
+    
+    private CharSequence handleNamedBackReference() throws TokenizerException{
+        if(inputString.charAt(indexPos++) != '<')
+            throw new TokenizerException("Expected < after \\k but did not find it at " + indexPos);
+        
+        return get_group_name(inputString.charAt(indexPos++));
     }
     
     private RegexToken processHexDigits() throws TokenizerException{
@@ -439,16 +449,22 @@ class Tokenizer {
             return new BraceRegexToken(lower, upper, false);        
     }   
     
-    private RegexToken parseGroup() throws TokenizerException{
+    private RegexToken parseGroup(CharSequence... group_name) throws TokenizerException
+        {
         // only called when ( has been found so assumes it is inside a group
         ArrayList<RegexToken> groupTokenList = new ArrayList<>();
         int i = recParse(groupTokenList, true);
-        
-        return new GroupRegexToken(groupTokenList.toArray(new RegexToken[i]));
-    }
+
+        if (group_name.length > 0)  // it is a named group
+            return new GroupRegexToken(groupTokenList.toArray(new RegexToken[i]), group_name[0]);
+        else
+            return new GroupRegexToken(groupTokenList.toArray(new RegexToken[i]));
+        }
     
     private RegexToken handleLookaround() throws TokenizerException{
         // called when (? has been found and pointer is on the ?
+        // also handles named groups 
+        
         indexPos++;
         boolean lookahead = true, positive = true;
         try{
@@ -476,8 +492,9 @@ class Tokenizer {
                         positive = false;
                         break; 
                     default:
-                        throw new TokenizerException("Expected = or ! but found " 
-                                + current + " at " + indexPos);            
+                        // this must be a named capturing group then
+                        CharSequence group_name = get_group_name(current);
+                        return parseGroup(group_name);
                 }
         }
         }
@@ -491,6 +508,27 @@ class Tokenizer {
             return new LookbehindRegexToken(new Tokenizer(find_group_end(1)).tokenize(), positive);        
     }
     
+    private CharSequence get_group_name(char c) throws TokenizerException
+        {
+        // called with indexPos on first letter of group name
+        StringBuilder sb = new StringBuilder("").append(c);
+        try
+            {
+            char currentChar = inputString.charAt(indexPos++);
+            while (currentChar != '>')
+                {
+                sb.append(currentChar);
+                currentChar = inputString.charAt(indexPos++);
+                }
+            return sb;
+            } catch (StringIndexOutOfBoundsException siobe)
+            {
+            throw new TokenizerException("Reached unexpected end of string at while parsing"
+                    + " group name - "
+                    + siobe.getMessage());
+            }
+        }
+
     private CharSequence find_group_end(int paren_count) throws TokenizerException{
         // called from within handleLookaround to capture regex pattern string in the lookaround group
         // paren_count must be non-zero and represents the number of open parentheses

@@ -23,7 +23,9 @@ package karthik.regex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import karthik.regex.dataStructures.Stack;
 import karthik.regex.dataStructures.Tree;
 
@@ -38,6 +40,7 @@ public class Pattern {
     private static boolean debug_create_tree = false;  // enables debug tree creation when true
     
     private static int groupID = 0;   // static counter to generate unique group ID
+    private static Map<String, Integer> group_names = new HashMap<>();
     
     // static counter to generate unique ID's for lazy quantifiers and ID for all greedy quantifiers
     private static Integer lazy_quant_uniqueID = 0; 
@@ -45,7 +48,7 @@ public class Pattern {
     
      // groupIDList maintains group ID path of parser instances that recursively called this instance
     private List<Integer> groupIDList; 
-    private CharSequence regex = "";  // regex String being parsed by this pattern instance
+    private CharSequence regex = "";  // regex String being parsed by this pattern instance    
         
     
     private Pattern(CharSequence inputString) throws TokenizerException {        
@@ -85,7 +88,7 @@ public class Pattern {
         groupID = 0;
         Pattern p = new Pattern(s);
         ParseObject parseObj = p.parse();                
-        return new Matcher(parseObj.get_transition_matrix());
+        return new Matcher(parseObj.get_transition_matrix(), group_names);
     }
     
     static TransitionTable get_trans_table(CharSequence inputString,  final List<Integer> IDList) 
@@ -309,6 +312,11 @@ public class Pattern {
         if (currentType == RegexTokenNames.GROUP){
             // create new Pattern instance to process the group subtree
             groupID++;
+            
+            CharSequence name = ((GroupRegexToken) current).get_group_name();
+            if(!name.equals(""))
+                group_names.put(name.toString(), groupID);
+            
             current.addGroupIDList(groupIDList);
             group_transition_matrix = ((GroupRegexToken) current).createTransitionMatrix();
             if(group_transition_matrix == null)  // regex in group was invalid
@@ -370,10 +378,21 @@ public class Pattern {
         RegexToken current = getCurrentToken();        
         
         if(current.type == RegexTokenNames.BACKREFERENCE){
-            // back reference number has to be to a group that has aready been captured
+            // back reference number has to be to a group that has already been captured
             // i.e. can't have /3 if there have only been 2 groups so far
-            
-            int backrefID = ((BackRefRegexToken) current).getBackRefID();
+            BackRefRegexToken backref_token = (BackRefRegexToken) current;
+            Integer backrefID = backref_token.getBackRefID();
+           
+            // get the ID if backref was to a named group
+            if(backrefID == BackRefRegexToken.INVALID_ID){
+                Integer id = group_names.get(backref_token.get_group_name().toString());
+                if(id == null)
+                    throw new ParserException("Regex cannot be parsed: Back Reference to group name " + 
+                        backref_token.get_group_name() + " which does not exist ");
+                backref_token.setBackRefID(id);
+                backrefID = id;
+            }
+                
             if(backrefID > groupID)
                 throw new ParserException("Regex cannot be parsed: Back Reference to group ID " + 
                         backrefID + " but there have only been " + groupID + " groups so far");
@@ -385,11 +404,11 @@ public class Pattern {
             
             current.addGroupIDList(groupIDList);
             if(LOG)
-                System.out.println("in back_reference() - added " + current.toString());
+                System.out.println("in back_reference() - added " + backref_token.toString());
             
             if(debug_create_tree)
                 debug_tree_stack.push(new Tree<>(current, null, null));
-            matcherStack.push(new TransitionTable(current));
+            matcherStack.push(new TransitionTable(backref_token));
             getNextToken();
             return true;
         }

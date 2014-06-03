@@ -14,12 +14,23 @@ import karthik.regex.dataStructures.Tree;
  */
 class GroupRegexToken extends RegexToken{
     private RegexToken[] tokArray;
+    private CharSequence group_name = "";
     
     GroupRegexToken(RegexToken[] tokArr){
         tokArray = tokArr;
         type = RegexTokenNames.GROUP;        
     }        
  
+    GroupRegexToken(RegexToken[] tokArr, CharSequence name){
+        this(tokArr);
+        group_name = name;
+    }        
+
+    CharSequence get_group_name()
+        {
+        return group_name;
+        }
+
     TransitionTable createTransitionMatrix() throws ParserException{
         TransitionTable groupMatrix;
         groupMatrix = new Pattern(tokArray, groupIDList).parse().get_transition_matrix();
@@ -33,7 +44,7 @@ class GroupRegexToken extends RegexToken{
     }
     
     public String toString(){
-        StringBuffer sb = new StringBuffer("GROUPTOKEN" + ": (");
+        StringBuffer sb = new StringBuffer("GROUPTOKEN " + group_name + ": (");
         for (RegexToken r: tokArray)
             sb.append(r.toString() + " ");
         

@@ -12,18 +12,24 @@ package karthik.regex;
  */
 public class BackRefRegexToken extends RegexToken
     {
-    private int backRefID;
+    static Integer INVALID_ID = -1;
+    private Integer backRefID = INVALID_ID;
+    private CharSequence group_name = "";
 
-    public BackRefRegexToken()
-        {
-        }
+    protected BackRefRegexToken() {}
     
-    BackRefRegexToken(int id){
+    BackRefRegexToken(Integer id){
         backRefID = id;
         type = RegexTokenNames.BACKREFERENCE;
     }
-    
-    public boolean matches(CharSequence s, int pos) throws MatcherException{
+
+    BackRefRegexToken(CharSequence name)
+        {
+        group_name = name;
+        type = RegexTokenNames.BACKREFERENCE;
+        }
+
+    public boolean matches(CharSequence s, Integer pos) throws MatcherException{
             return false;        
     }
             
@@ -31,9 +37,19 @@ public class BackRefRegexToken extends RegexToken
         return true;
     }
 
-    int getBackRefID()
+    Integer getBackRefID()
         {
         return backRefID;
+        }
+    
+    void setBackRefID(Integer backRefID)
+        {
+        this.backRefID = backRefID;
+        }
+
+    CharSequence get_group_name()
+        {
+        return group_name;
         }
     
      public String toString()
