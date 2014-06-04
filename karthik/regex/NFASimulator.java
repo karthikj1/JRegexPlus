@@ -129,7 +129,7 @@ class NFASimulator {
         Matchable match_token;                                
         
         for (Integer current_state : source_states.keySet()) {
-            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+            for (Integer target_state : transMatrix.get_all_transitions(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state); 
                 
                 if (!move_states.containsKey(target_state)) {                      
@@ -171,7 +171,7 @@ class NFASimulator {
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for boundary transitions
-            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+            for (Integer target_state : transMatrix.get_all_transitions(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
 
                 if (match_token.isBoundaryOrLookaround()){
@@ -228,7 +228,7 @@ class NFASimulator {
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for quantifier tokens
-            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+            for (Integer target_state : transMatrix.get_all_transitions(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
                 has_transitions = true;
                 
@@ -255,6 +255,8 @@ class NFASimulator {
                 }
                 else
                     if(!match_token.isQuantifier() && !match_token.isEpsilon())
+                 // if we got here, this token is for a normal transition or for a boundary transition
+                 // which may match the *next* character or boundary, so we keep this state active       
                         retain_state = true;
                     
             } // for target_state

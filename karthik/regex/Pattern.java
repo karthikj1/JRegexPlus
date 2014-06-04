@@ -40,6 +40,7 @@ public class Pattern {
     private static boolean debug_create_tree = false;  // enables debug tree creation when true
     
     private static int groupID = 0;   // static counter to generate unique group ID
+    // see notes in Pattern.compile method before any changes to the below map variable
     private static Map<String, Integer> group_names = new HashMap<>();
     
     // static counter to generate unique ID's for lazy quantifiers and ID for all greedy quantifiers
@@ -85,10 +86,23 @@ public class Pattern {
     }
 
     public static Matcher compile(CharSequence s) throws ParserException, TokenizerException{
+        //  Static method called by user to compile a given regex
+        
+        Map<String, Integer> named_groups;
+        /*  Pattern class uses a static variable called group_names to store any named groups
+            while processing a regex - needs to be static since Pattern recursively creates
+            more instances of itself while processing groups.
+            After the entire regex has been processed, the map in the static variable is assigned
+            to the local variable in this method and the static variable is cleared to be
+            ready for the next call to Pattern for a new regex.        
+        */
+ 
         groupID = 0;
         Pattern p = new Pattern(s);
-        ParseObject parseObj = p.parse();                
-        return new Matcher(parseObj.get_transition_matrix(), group_names);
+        ParseObject parseObj = p.parse();        
+        named_groups = group_names;
+        group_names = new HashMap<>();  // clear the static variable
+        return new Matcher(parseObj.get_transition_matrix(), named_groups);
     }
     
     static TransitionTable get_trans_table(CharSequence inputString,  final List<Integer> IDList) 

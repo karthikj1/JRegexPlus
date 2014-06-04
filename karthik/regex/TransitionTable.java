@@ -74,7 +74,7 @@ class TransitionTable implements Cloneable
         expand_table(n1States);
         contains_backref = parent_table.contains_backref();
         for (int i = 0; i < n1States; i++)
-            for (int j : parent_table.getKeySet(i))
+            for (int j : parent_table.get_all_transitions(i))
                 {
                 tok = parent_table.getTransition(i, j);
                 setTransition(i + backref_states, j + backref_states, tok);
@@ -107,7 +107,7 @@ class TransitionTable implements Cloneable
             {
             m = new HashMap<>();
             temp_list.add(m);
-            for (Integer col : this.getKeySet(row))
+            for (Integer col : this.get_all_transitions(row))
                 {
                 tok = getTransition(row, col);
                 m.put(col - backref_states, tok);
@@ -147,7 +147,7 @@ class TransitionTable implements Cloneable
         rowMap.remove(col);        
     }
     
-    Set<Integer> getKeySet(int row){
+    Set<Integer> get_all_transitions(int row){
         return trans_table_list.get(row).keySet();
     }
     
@@ -276,7 +276,7 @@ class TransitionTable implements Cloneable
         // clone matrix from TransitionTable n2 to new matrix
         expand_table(n2States + 2);
         for(Integer i = 0; i < n2States; i++)
-            for(Integer j : n2.getKeySet(i)){
+            for(Integer j : n2.get_all_transitions(i)){
                  token = n2.getTransition(i,j);             
                  setTransition(starting_num_states + i, starting_num_states + j,token);
             }
@@ -460,7 +460,7 @@ class TransitionTable implements Cloneable
         Matchable token;
 
         for (int transMatrixRow = 0; transMatrixRow < numStates; transMatrixRow++)
-            for (int col : getKeySet(transMatrixRow))
+            for (int col : get_all_transitions(transMatrixRow))
                 {
                 token = this.getTransition(transMatrixRow, col);
                 transposeMatrix.setTransition(col, transMatrixRow, token);
@@ -489,7 +489,7 @@ class TransitionTable implements Cloneable
             newTable.expand_table(numStates);
             
             for (int transMatrixRow = 0; transMatrixRow < numStates; transMatrixRow++)
-                for (Integer col : getKeySet(transMatrixRow))
+                for (Integer col : get_all_transitions(transMatrixRow))
                     {
                     token = this.getTransition(transMatrixRow, col);                    
                     newTable.setTransition(transMatrixRow, col, token);

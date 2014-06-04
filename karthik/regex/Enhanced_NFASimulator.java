@@ -142,7 +142,7 @@ class Enhanced_NFASimulator extends NFASimulator{
         Matchable match_token;                     
         
         for (Integer current_state : source_states.keySet()) {
-            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+            for (Integer target_state : transMatrix.get_all_transitions(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state); 
                 
                     // just comment out this IF block and its contents if backrefs blow everything up
@@ -301,7 +301,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for boundary transitions
-            for (Integer target_state : transMatrix.getKeySet(current_state)) {
+            for (Integer target_state : transMatrix.get_all_transitions(current_state)) {
                 match_token = transMatrix.getTransition(current_state, target_state);
 
                 if (match_token.isBoundaryOrLookaround()){
@@ -361,7 +361,7 @@ class Enhanced_NFASimulator extends NFASimulator{
             current_state = boundary_stack.pop();
             current_state_obj = boundary_stack_objects.pop();
             // cycle through every possible transition from current_state, looking for quantifier tokens
-            for (Integer target_state : trans_table.getKeySet(current_state)) {
+            for (Integer target_state : trans_table.get_all_transitions(current_state)) {
                 match_token = trans_table.getTransition(current_state, target_state);
                 has_transitions = true;
                 

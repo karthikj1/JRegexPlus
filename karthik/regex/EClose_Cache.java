@@ -15,7 +15,7 @@ import karthik.regex.dataStructures.Stack;
  */
 class EClose_Cache
     {
-    Map<Integer, Integer[]> eclose_cache;
+    private Map<Integer, Integer[]> eclose_cache;
     
     private EClose_Cache(Map<Integer, Integer[]> cache){
         eclose_cache = cache;
@@ -60,7 +60,7 @@ class EClose_Cache
             // pop the state ID and the state object associated with it
             current_state = tempStack.pop();
 
-            for (Integer target_state : transition_table.getKeySet(current_state))
+            for (Integer target_state : transition_table.get_all_transitions(current_state))
                 if ((transition_table.getTransition(current_state, target_state).isEpsilon())
                         && (!eclose_map.containsKey(target_state)))
                     {
