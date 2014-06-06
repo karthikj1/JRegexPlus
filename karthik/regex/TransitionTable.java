@@ -354,7 +354,6 @@ class TransitionTable implements Cloneable
     
     TransitionTable lazy_question(Integer quantGroupID, Integer uniqueID)
         {
-        //TODO: implement lazy question quantifier
         question();
         make_lazy(quantGroupID, uniqueID, RegexTokenNames.LAZY_QUESTION);
         return this;
@@ -362,7 +361,6 @@ class TransitionTable implements Cloneable
 
     TransitionTable lazy_star(Integer quantGroupID, Integer uniqueID)
         {
-        //TODO: implement lazy question quantifier
         star(quantGroupID, uniqueID);
         make_lazy(quantGroupID, uniqueID, RegexTokenNames.LAZY_STAR);
         return this;
@@ -370,7 +368,6 @@ class TransitionTable implements Cloneable
 
     TransitionTable lazy_plus(Integer quantGroupID, Integer uniqueID)
         {
-        //TODO: implement lazy question quantifier
         plus(quantGroupID, uniqueID);
         make_lazy(quantGroupID, uniqueID, RegexTokenNames.LAZY_PLUS);
         return this;
