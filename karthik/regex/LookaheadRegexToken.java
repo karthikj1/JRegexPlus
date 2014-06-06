@@ -61,7 +61,10 @@ class LookaheadRegexToken extends RegexToken
         StringBuffer sb = new StringBuffer("");
         sb.append((positive) ? "POSITIVE " : "NEGATIVE ");
         sb.append("LOOKAHEAD ");
-        sb.append(lookahead_matcher.toString());
+        if(lookahead_matcher == null)
+            sb.append(" Lookahead matcher not yet created ");
+        else
+            sb.append(lookahead_matcher.toString());
         return sb.toString();
         }
 

@@ -74,7 +74,10 @@ public class LookbehindRegexToken extends RegexToken
         StringBuffer sb = new StringBuffer("");
         sb.append((positive) ? "POSITIVE " : "NEGATIVE ");
         sb.append("LOOKBEHIND ");
-        sb.append(lookbehind_matcher.toString());
+        if(lookbehind_matcher == null)
+            sb.append("Lookbehind matcher not yet created ");
+        else
+            sb.append(lookbehind_matcher.toString());
         return sb.toString();
         }
 

@@ -19,4 +19,5 @@ public interface Matchable {
     public List<Integer> getGroupID();     
     public boolean isBoundaryOrLookaround();
     public boolean isBackReference();
+    public int getFlags();
 }

@@ -22,20 +22,21 @@ class RegexToken implements Matchable{
     protected char c;
     protected RegexTokenNames type;
     protected List<Integer> groupIDList = new ArrayList<>();   
-    
+    protected int flags;
     
     protected RegexToken()
     {}
     
-    RegexToken(RegexTokenNames itemType, char ch)
+    RegexToken(RegexTokenNames itemType, char ch, int flags)
     {   
-       this(itemType);  
+       this(itemType, flags);  
        c = ch;
     }
     
-    RegexToken(RegexTokenNames itemType)
+    RegexToken(RegexTokenNames itemType, int flags)
     {
        type = itemType;      
+       this.flags = flags;
     }
     
     public List<Integer> getGroupID() {
@@ -85,12 +86,16 @@ class RegexToken implements Matchable{
         return false;
     }       
     
+    public int getFlags(){
+        return flags;
+    }
+    
     public boolean matches(final CharSequence search_string, final int pos) throws MatcherException
     {
         char current_char = search_string.charAt(pos);
         switch(getType()){
             case CHAR:
-                return (current_char == c);
+                return match_char(current_char);
             case DIGIT:
                 return Character.isDigit(current_char);
             case WHITESPACE:
@@ -104,7 +109,7 @@ class RegexToken implements Matchable{
             case NONWORD:
                  return !(Character.isLetterOrDigit(current_char) || current_char == '_');
             case DOT:
-                return true;
+                return match_dot(current_char);
             case TAB:
                 return (current_char == '\t');
             case NEWLINE:
@@ -118,6 +123,20 @@ class RegexToken implements Matchable{
                 return false;
         }
        
+    }
+    
+    private boolean match_char(char current_char){
+        if ((flags & Pattern.CASE_INSENSITIVE) == 0) // case-sensitive match
+            return (current_char == c);
+        // else do case-insensitive match
+        return (Character.toLowerCase(c) == Character.toLowerCase(current_char));
+    }
+    
+    private boolean match_dot(char current_char){
+        if((flags & Pattern.DOTALL) == 0) // DOT does not match newline
+            return (current_char != '\n');
+        // otherwise DOT matches anything
+        return true;
     }
     
     protected String groupID_toString(){

@@ -21,6 +21,7 @@ class Tokenizer {
     private int len;
     private char INTERSECTIONCHAR = '&';    
     private char NEGATIONCHAR = '^';
+    private int flags = Pattern.DOTALL;
 
     Tokenizer(CharSequence s) {
         indexPos = 0;
@@ -42,19 +43,17 @@ class Tokenizer {
     RegexToken[] tokenize() throws TokenizerException{
         
         ArrayList<RegexToken> tokenList = new ArrayList<>();
-        int numTokens = recParse(tokenList, false);
-        return tokenList.toArray(new RegexToken[numTokens]);
+        recParse(tokenList, false);
+        return tokenList.toArray(new RegexToken[1]);
     }
     
-    private int recParse(ArrayList<RegexToken> tokens, boolean inGroup) throws TokenizerException{
+    private void recParse(ArrayList<RegexToken> tokens, boolean inGroup) throws TokenizerException{
         // inGroup is true if the parser is inside a group enclosed by parentheses
         char currentChar;
-        int numTokens = 0;
         
         try {            
             while (indexPos < len) {
-                currentChar = inputString.charAt(indexPos++);
-                numTokens++;
+                currentChar = inputString.charAt(indexPos++);                
                 switch (currentChar) {
                     case '\\':
                         currentChar = inputString.charAt(indexPos++);
@@ -67,61 +66,65 @@ class Tokenizer {
                         break;
 
                     case '(':
-                        if(inputString.charAt(indexPos) == '?')
-                            tokens.add(handleLookaround());
+                        if(inputString.charAt(indexPos) == '?'){
+                            RegexToken lookaround_tok = handleLookaround_and_flags();
+                            if(lookaround_tok != null)
+                                tokens.add(lookaround_tok);
+                            // null token means it was a flag so nothing to do
+                        }
                         else
                             tokens.add(parseGroup());
                         break;
                     case ')':
                         if(inGroup)
-                            return --numTokens;
+                            return;
                         // ) treated like ordinary character when not preceded by matching left parentheses
-                        tokens.add(new RegexToken(RegexTokenNames.CHAR, currentChar));
+                        tokens.add(new RegexToken(RegexTokenNames.CHAR, currentChar, flags));
                         break;                            
                     case '{':
                         tokens.add(parseBraces());
                         break;                    
                     case '.':
-                        tokens.add(new RegexToken(RegexTokenNames.DOT));
+                        tokens.add(new RegexToken(RegexTokenNames.DOT, flags));
                         break;
                     case '|':
-                        tokens.add(new RegexToken(RegexTokenNames.OR));
+                        tokens.add(new RegexToken(RegexTokenNames.OR, flags));
                         break;
                     
                     case '?':
                         if(is_lazy_quantifier())
-                             tokens.add(new RegexToken(RegexTokenNames.LAZY_QUESTION));
+                             tokens.add(new RegexToken(RegexTokenNames.LAZY_QUESTION, flags));
                         else
-                             tokens.add(new RegexToken(RegexTokenNames.QUESTION));
+                             tokens.add(new RegexToken(RegexTokenNames.QUESTION, flags));
                         break;    
                     case '+':
                         if(is_lazy_quantifier())
-                             tokens.add(new RegexToken(RegexTokenNames.LAZY_PLUS));
+                             tokens.add(new RegexToken(RegexTokenNames.LAZY_PLUS, flags));
                         else
-                            tokens.add(new RegexToken(RegexTokenNames.PLUS));
+                            tokens.add(new RegexToken(RegexTokenNames.PLUS, flags));
                         break;
                         
                     case '*':
                         if(is_lazy_quantifier())
-                             tokens.add(new RegexToken(RegexTokenNames.LAZY_STAR));
+                             tokens.add(new RegexToken(RegexTokenNames.LAZY_STAR, flags));
                         else
-                            tokens.add(new RegexToken(RegexTokenNames.STAR));
+                            tokens.add(new RegexToken(RegexTokenNames.STAR, flags));
                         break;
                     case '^':
-                        tokens.add(new BoundaryRegexToken(RegexTokenNames.LINE_START));
+                        tokens.add(new BoundaryRegexToken(RegexTokenNames.LINE_START, flags));
                         break;    
                     case '$':
-                        tokens.add(new BoundaryRegexToken(RegexTokenNames.LINE_END));
+                        tokens.add(new BoundaryRegexToken(RegexTokenNames.LINE_END, flags));
                         break;    
                     default:
-                        tokens.add(new RegexToken(RegexTokenNames.CHAR, currentChar));
+                        tokens.add(new RegexToken(RegexTokenNames.CHAR, currentChar, flags));
                 }                
             
             }  // while
             if((indexPos == len) && inGroup)
                 throw new TokenizerException("Expected ) but reached end of string unexpectedly");
             
-            return numTokens;
+            return;
         } // try
         catch (StringIndexOutOfBoundsException siobe) {
             throw new TokenizerException("Reached unexpected end of string at "
@@ -158,15 +161,15 @@ class Tokenizer {
 
             if (currentChar == NEGATIONCHAR){
                     negated = true;
-                    tokenChain = new CharClassRegexToken("", negated);
+                    tokenChain = new CharClassRegexToken("", negated, flags);
             }
             else if(currentChar == '['){
                     indexPos--;
-                    tokenChain = new CharClassRegexToken("", negated);
+                    tokenChain = new CharClassRegexToken("", negated, flags);
                     tokenChain.add(parseCharClass(), true);
             }
             else {
-                tokenChain = new CharClassRegexToken("", negated); 
+                tokenChain = new CharClassRegexToken("", negated, flags); 
                 indexPos--;
             }
 
@@ -177,23 +180,23 @@ class Tokenizer {
                     currentChar = inputString.charAt(indexPos++);
                     switch (currentChar) {
                         case 'd':
-                            tokenChain.add(new CharClassRegexToken("0123456789", false), true);
+                            tokenChain.add(new CharClassRegexToken('0', '9', false, flags), true);
                             break;
                         case 'D':
-                            tokenChain.add(new CharClassRegexToken("0123456789", true), true);
+                            tokenChain.add(new CharClassRegexToken('0','9', true, flags), true);
                             break;                        
                         case 'w':
-                            tokenChain.add(new CharClassRegexToken(makeWordCharClass(), false), true);
+                            tokenChain.add(makeWordCharClass(false), true);
                             break;               
                         case 'W':
-                            tokenChain.add(new CharClassRegexToken(makeWordCharClass(), true), true);
+                            tokenChain.add(makeWordCharClass(true), true);
                             break;               
                             
                         case 's':
-                            tokenChain.add(new CharClassRegexToken("\\n\\r\\f\\b \\t", false), true);                            
+                            tokenChain.add(new CharClassRegexToken("\\n\\r\\f\\b \\t", false, flags), true);                            
                             break;
                         case 'S':
-                            tokenChain.add(new CharClassRegexToken("\\n\\r\\f\\b \\t", true), true);                            
+                            tokenChain.add(new CharClassRegexToken("\\n\\r\\f\\b \\t", true, flags), true);                            
                             break;
                         case '\\':
                         case '[':
@@ -224,10 +227,10 @@ class Tokenizer {
                 if (currentChar == '-') {  // fill in char range  
                     char start = inputString.charAt(indexPos - 2);
                     char end = inputString.charAt(indexPos++);
-
-                    for (int i = start + 1; i <= end; i++) {
-                        tokenChain.append((char) i);
-                    }
+                    if (Character.compare(start, end) > 0)
+                        throw new TokenizerException("Invalid character class " + start 
+                        + "-" + end + " at index " + indexPos + ". End character is lower than starting character");                    
+                        tokenChain.append(start, end);
                     continue;
                 }
                 // character is a normal character so just add it to the chain
@@ -247,46 +250,46 @@ class Tokenizer {
     private void handleEscapeChars(ArrayList<RegexToken> tokens, char c) throws TokenizerException {
         switch (c) {
             case 'd':
-                tokens.add(new RegexToken(RegexTokenNames.DIGIT));
+                tokens.add(new RegexToken(RegexTokenNames.DIGIT, flags));
                 break;
             case 'D':
-                tokens.add(new RegexToken(RegexTokenNames.NONDIGIT));
+                tokens.add(new RegexToken(RegexTokenNames.NONDIGIT, flags));
                 break;
             case 'w':
-                tokens.add(new RegexToken(RegexTokenNames.WORD));
+                tokens.add(new RegexToken(RegexTokenNames.WORD, flags));
                 break;
             case 'W':
-                tokens.add(new RegexToken(RegexTokenNames.NONWORD));
+                tokens.add(new RegexToken(RegexTokenNames.NONWORD, flags));
                 break;
             case 's':
-                tokens.add(new RegexToken(RegexTokenNames.WHITESPACE));
+                tokens.add(new RegexToken(RegexTokenNames.WHITESPACE, flags));
                 break;
             case 'S':
-                tokens.add(new RegexToken(RegexTokenNames.NONWHITESPACE));
+                tokens.add(new RegexToken(RegexTokenNames.NONWHITESPACE, flags));
                 break;
             case 'n':
-                tokens.add(new RegexToken(RegexTokenNames.NEWLINE));
+                tokens.add(new RegexToken(RegexTokenNames.NEWLINE, flags));
                 break;
             case 'r':
-                tokens.add(new RegexToken(RegexTokenNames.CARR_RETURN));
+                tokens.add(new RegexToken(RegexTokenNames.CARR_RETURN, flags));
                 break;
             case 'f':
-                tokens.add(new RegexToken(RegexTokenNames.FORMFEED));
+                tokens.add(new RegexToken(RegexTokenNames.FORMFEED, flags));
                 break;           
             case 'b':
-                tokens.add(new BoundaryRegexToken(RegexTokenNames.WORD_BOUNDARY));
+                tokens.add(new BoundaryRegexToken(RegexTokenNames.WORD_BOUNDARY, flags));
                 break;                
             case 'B':
-                tokens.add(new BoundaryRegexToken(RegexTokenNames.NON_WORD_BOUNDARY));
+                tokens.add(new BoundaryRegexToken(RegexTokenNames.NON_WORD_BOUNDARY, flags));
                 break;        
             case 'A':
-                tokens.add(new BoundaryRegexToken(RegexTokenNames.STRING_START));
+                tokens.add(new BoundaryRegexToken(RegexTokenNames.STRING_START, flags));
                 break;        
             case 'z':
-                tokens.add(new BoundaryRegexToken(RegexTokenNames.STRING_END));
+                tokens.add(new BoundaryRegexToken(RegexTokenNames.STRING_END, flags));
                 break;                        
             case 'Z':
-                tokens.add(new BoundaryRegexToken(RegexTokenNames.JAVA_Z_STRING_END));
+                tokens.add(new BoundaryRegexToken(RegexTokenNames.JAVA_Z_STRING_END, flags));
                 break;                        
             case 'p':
                 tokens.add(handlePosix(false));
@@ -302,7 +305,7 @@ class Tokenizer {
                 break;            
             case '{': case '\\': case '*': case '+': case '.' : case '[' :
             case '(':
-                tokens.add(new RegexToken(RegexTokenNames.CHAR, c));
+                tokens.add(new RegexToken(RegexTokenNames.CHAR, c, flags));
                 break;    
             case 'k':
                 tokens.add(new BackRefRegexToken(handleNamedBackReference()));
@@ -332,7 +335,7 @@ class Tokenizer {
         hexString.append(inputString.charAt(indexPos++));        
         hexString.append(inputString.charAt(indexPos++));        
         hexNumber = Integer.parseInt(hexString.toString(), 16);
-        return new RegexToken(RegexTokenNames.CHAR, (char) hexNumber);
+        return new RegexToken(RegexTokenNames.CHAR, (char) hexNumber, flags);
         }
         catch (NumberFormatException nfe){
             throw new TokenizerException("Expected 2 digit hexadecimal number but found" 
@@ -360,7 +363,7 @@ class Tokenizer {
         if(octalNumber > 255)
             throw new TokenizerException("Expected octal number less than \0377 but found " + octalString);
         
-        return new RegexToken(RegexTokenNames.CHAR, (char) octalNumber);
+        return new RegexToken(RegexTokenNames.CHAR, (char) octalNumber, flags);
         }
         catch (NumberFormatException nfe){
             throw new TokenizerException("Expected 3 digit octal number but found" 
@@ -389,7 +392,7 @@ class Tokenizer {
             }
             
             // create char classes from POSIX class names
-            return NamedCharClassTokenFactory.getCharClassToken(posix_class_name.toString(), isNegated);
+            return NamedCharClassTokenFactory.getCharClassToken(posix_class_name.toString(), isNegated, flags);
          
         } catch (StringIndexOutOfBoundsException siobe) {
             throw new TokenizerException("Reached unexpected end of string while processing POSIX class. "
@@ -398,15 +401,12 @@ class Tokenizer {
         }
      
  }
-    private String makeWordCharClass()
+    private CharClassRegexToken makeWordCharClass(boolean isNegated)
         {
-        StringBuffer sb = new StringBuffer("");
-        for(int c = 'a'; c <= 'z'; c++){
-            sb.append((char) c);
-            sb.append(Character.toUpperCase((char) c));
-        }
-        sb.append('_');
-        return sb.toString();
+        CharClassRegexToken tok = new CharClassRegexToken('a', 'z', isNegated, flags);
+        tok.append('A','Z');
+        tok.append('_');
+        return tok;
         }
     
     private BraceRegexToken parseBraces() throws TokenizerException{
@@ -453,17 +453,17 @@ class Tokenizer {
         {
         // only called when ( has been found so assumes it is inside a group
         ArrayList<RegexToken> groupTokenList = new ArrayList<>();
-        int i = recParse(groupTokenList, true);
+        recParse(groupTokenList, true);
 
         if (group_name.length > 0)  // it is a named group
-            return new GroupRegexToken(groupTokenList.toArray(new RegexToken[i]), group_name[0]);
+            return new GroupRegexToken(groupTokenList.toArray(new RegexToken[1]), group_name[0]);
         else
-            return new GroupRegexToken(groupTokenList.toArray(new RegexToken[i]));
+            return new GroupRegexToken(groupTokenList.toArray(new RegexToken[1]));
         }
     
-    private RegexToken handleLookaround() throws TokenizerException{
+    private RegexToken handleLookaround_and_flags() throws TokenizerException{
         // called when (? has been found and pointer is on the ?
-        // also handles named groups 
+        // also handles named groups and flags
         
         indexPos++;
         boolean lookahead = true, positive = true;
@@ -494,8 +494,12 @@ class Tokenizer {
                     default:
                         // this must be a named capturing group then
                         CharSequence group_name = get_group_name(current);
-                        return parseGroup(group_name);
+                        return parseGroup(group_name);                        
                 }
+                break;
+            default:  // might be some flag
+                parseFlags(current);
+                return null;
         }
         }
          catch (StringIndexOutOfBoundsException siobe) {
@@ -507,6 +511,44 @@ class Tokenizer {
         else
             return new LookbehindRegexToken(new Tokenizer(find_group_end(1)).tokenize(), positive);        
     }
+    
+    private void parseFlags(char currentChar) throws TokenizerException
+        {
+        // called when (? and a character other than lookaround or named group is found
+        boolean switch_off = false;
+        try
+            {
+
+            if (currentChar == '-')
+                {
+                switch_off = true;
+                currentChar = inputString.charAt(indexPos++);
+                }
+            while (currentChar != ')')
+                {
+                switch (currentChar)
+                    {
+                    case 'i':
+                        flags = (switch_off) ? flags & (~Pattern.CASE_INSENSITIVE) : flags | Pattern.CASE_INSENSITIVE;
+                        break;
+                    case 'm':
+                        flags = (switch_off) ? flags & (~Pattern.MULTILINE) : flags | Pattern.MULTILINE;
+                        break;
+                    case 's':
+                        flags = (switch_off) ? flags & (~Pattern.DOTALL) : flags | Pattern.DOTALL;
+                        break;
+                    default:
+                        throw new TokenizerException("Unrecognized flag character " + currentChar
+                                + " at index " + indexPos);
+                    }
+                currentChar = inputString.charAt(indexPos++);
+                }
+            } catch (StringIndexOutOfBoundsException siobe)
+            {
+            throw new TokenizerException("Reached unexpected end of string while looking for flag characters - "
+                    + siobe.getMessage());
+            }
+        }
     
     private CharSequence get_group_name(char c) throws TokenizerException
         {
@@ -530,7 +572,7 @@ class Tokenizer {
         }
 
     private CharSequence find_group_end(int paren_count) throws TokenizerException{
-        // called from within handleLookaround to capture regex pattern string in the lookaround group
+        // called from within handleLookaround_and_flags to capture regex pattern string in the lookaround group
         // paren_count must be non-zero and represents the number of open parentheses
         // at current indexPos
         

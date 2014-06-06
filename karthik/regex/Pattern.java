@@ -22,7 +22,6 @@ package karthik.regex;
  */
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +50,12 @@ public class Pattern {
     private List<Integer> groupIDList; 
     private CharSequence regex = "";  // regex String being parsed by this pattern instance    
         
+    // flags for parsing 
+    final static int DEBUG_DUMMY_FLAG = 0;   // dummy flag used in debug area where flags don't matter
+    final static int CASE_INSENSITIVE = 1;
+    final static int DOTALL = 2;
+    final static int MULTILINE = 4;
+    
     
     private Pattern(CharSequence inputString) throws TokenizerException {        
         this(new Tokenizer(inputString).tokenize(), null);        
@@ -80,9 +85,6 @@ public class Pattern {
         if((addID) && (!groupIDList.contains(groupID)))
                 groupIDList.add(groupID);
         
-        if(LOG)
-            System.out.println("Created parser with group IDs "
-                    + Arrays.toString(groupIDList.toArray()));
     }
 
     public static Matcher compile(CharSequence s) throws ParserException, TokenizerException{
@@ -141,7 +143,12 @@ public class Pattern {
     }
 
     ParseObject parse() throws ParserException {
-            
+        if(LOG){
+            for(RegexToken tok: tokens)
+                System.out.print(tok.toString() + " ");
+            System.out.println("");
+        }    
+        
         if(RE()){
             TransitionTable transitions = matcherStack.pop();             
             // above stores number of capturing groups in transition matrix
@@ -173,7 +180,7 @@ public class Pattern {
                 if (debug_create_tree) {
                     Tree<RegexToken> right = debug_tree_stack.pop();
                     Tree<RegexToken> left = debug_tree_stack.pop();
-                    debug_tree_stack.push(new Tree<RegexToken>(new RegexToken(RegexTokenNames.OR), left, right));
+                    debug_tree_stack.push(new Tree<RegexToken>(new RegexToken(RegexTokenNames.OR, DEBUG_DUMMY_FLAG), left, right));
                 }
                 TransitionTable n2 = matcherStack.pop();
                 TransitionTable n1 = matcherStack.pop();
@@ -209,7 +216,7 @@ public class Pattern {
             if(debug_create_tree){
             Tree<RegexToken> right = debug_tree_stack.pop();
             Tree<RegexToken> left = debug_tree_stack.pop();            
-            debug_tree_stack.push(new Tree<RegexToken>(new RegexToken(RegexTokenNames.AND), left, right));
+            debug_tree_stack.push(new Tree<RegexToken>(new RegexToken(RegexTokenNames.AND, DEBUG_DUMMY_FLAG), left, right));
             }
             TransitionTable n2 = matcherStack.pop();
             TransitionTable n1 = matcherStack.pop();
@@ -342,7 +349,7 @@ public class Pattern {
             if(debug_create_tree){                            
                 Tree<RegexToken> groupTree = ((GroupRegexToken) current).debug_create_tree();
                 debug_tree_stack.push(new Tree<>
-                        (new RegexToken(currentType), groupTree, null));
+                        (new RegexToken(currentType, current.getFlags()), groupTree, null));
             }
             
             return true;
@@ -417,8 +424,6 @@ public class Pattern {
                         backrefID + " in group " + backrefID);
             
             current.addGroupIDList(groupIDList);
-            if(LOG)
-                System.out.println("in back_reference() - added " + backref_token.toString());
             
             if(debug_create_tree)
                 debug_tree_stack.push(new Tree<>(current, null, null));

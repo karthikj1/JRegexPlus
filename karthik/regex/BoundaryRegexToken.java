@@ -11,8 +11,11 @@ package karthik.regex;
  * @author karthik
  */
 class BoundaryRegexToken extends RegexToken{
-    BoundaryRegexToken(RegexTokenNames itemType){
-        super(itemType);
+    private boolean multiline_enabled;
+    
+    BoundaryRegexToken(RegexTokenNames itemType, int flags){
+        super(itemType, flags);
+        multiline_enabled = ((flags & Pattern.MULTILINE) != 0);
     }
     
     public boolean isBoundaryOrLookaround(){
@@ -63,11 +66,11 @@ class BoundaryRegexToken extends RegexToken{
     }
      
       private boolean matchesLineStart(final CharSequence search_string, final int pos){
-                
+        
         Character prev = (pos > 0) ? search_string.charAt(pos - 1) : null;
         
         // start of string counts as start of line
-        if ((prev == null) || (prev == '\n'))                                
+        if ((prev == null) || (multiline_enabled && (prev == '\n')))                                
             return true;
         else
             return false;
@@ -78,7 +81,7 @@ class BoundaryRegexToken extends RegexToken{
         Character next = (pos < search_string.length()) ? search_string.charAt(pos) : null;
         
         // end of string counts as end of line
-        if ((next == null) || (next == '\n'))                                
+        if ((next == null) || (multiline_enabled && (next == '\n')))                                
             return true;
         else
             return false;

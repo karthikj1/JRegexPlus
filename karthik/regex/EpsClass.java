@@ -55,7 +55,11 @@ class EpsClass implements Matchable
         {
         return new ArrayList<Integer>(); // returns empty list
         }
-
+    
+    public int getFlags(){
+        return 0;
+    }
+    
     public String toString()
         {
         return "EPSILON";

@@ -25,44 +25,44 @@ class NamedCharClassTokenFactory
 // creates character class regex token for named POSIX classes
     {
     
-    static CharClassRegexToken getCharClassToken(final String class_name, final boolean isNegated) 
+    static CharClassRegexToken getCharClassToken(final String class_name, final boolean isNegated, int flags) 
         throws TokenizerException{
        StringBuffer sb = new StringBuffer("");
        
         if(class_name.equals("Lower"))
-            return new CharClassRegexToken(getLowerCase().toString(), isNegated);
+            return new CharClassRegexToken(getLowerCase().toString(), isNegated, flags);
         
         if(class_name.equals("Upper"))
-            return new CharClassRegexToken(getUpperCase().toString(), isNegated);
+            return new CharClassRegexToken(getUpperCase().toString(), isNegated, flags);
      
         if(class_name.equals("Digit"))
-            return new CharClassRegexToken(getDigit().toString(), isNegated);
+            return new CharClassRegexToken(getDigit().toString(), isNegated, flags);
         
         if(class_name.equals("XDigit"))
-            return new CharClassRegexToken(getHexDigits().toString(), isNegated);
+            return new CharClassRegexToken(getHexDigits().toString(), isNegated, flags);
 
         if(class_name.equals("Punct"))
-            return new CharClassRegexToken(getPunct().toString(), isNegated);
+            return new CharClassRegexToken(getPunct().toString(), isNegated, flags);
         
         if(class_name.equals("Alpha")){
-            return new CharClassRegexToken(getAlpha().toString(), isNegated);
+            return new CharClassRegexToken(getAlpha().toString(), isNegated, flags);
         }
         
         if(class_name.equals("Cntrl")){
-            return new CharClassRegexToken(getCntrlChars().toString(), isNegated);
+            return new CharClassRegexToken(getCntrlChars().toString(), isNegated, flags);
         }
 
         if(class_name.equals("Alnum")){
             sb.append(getAlpha());
             sb.append(getDigit());
-            return new CharClassRegexToken(sb.toString(), isNegated);
+            return new CharClassRegexToken(sb.toString(), isNegated, flags);
         }
         
         if(class_name.equals("Graph")){
             sb.append(getAlpha());
             sb.append(getPunct());
             sb.append(getDigit());
-            return new CharClassRegexToken(sb.toString(), isNegated);
+            return new CharClassRegexToken(sb.toString(), isNegated, flags);
         }        
         
         if(class_name.equals("Print")){
@@ -70,17 +70,17 @@ class NamedCharClassTokenFactory
             sb.append(getPunct());
             sb.append(getDigit());
             sb.append(' ');
-            return new CharClassRegexToken(sb.toString(), isNegated);
+            return new CharClassRegexToken(sb.toString(), isNegated, flags);
         }
         
         if(class_name.equals("Blank")){
             sb.append(" \\t");           
-            return new CharClassRegexToken(sb.toString(), isNegated);
+            return new CharClassRegexToken(sb.toString(), isNegated, flags);
         }
         
         if(class_name.equals("Space")){
             sb.append(" \\t\\n\\x0B\\f\\r");           
-            return new CharClassRegexToken(sb.toString(), isNegated);
+            return new CharClassRegexToken(sb.toString(), isNegated, flags);
         }
         
         throw new TokenizerException("Unknown POSIX class name " + class_name
