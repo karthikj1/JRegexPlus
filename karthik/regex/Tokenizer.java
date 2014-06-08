@@ -519,15 +519,13 @@ class Tokenizer {
         try
             {
 
-            if (currentChar == '-')
-                {
-                switch_off = true;
-                currentChar = inputString.charAt(indexPos++);
-                }
             while (currentChar != ')')
                 {
                 switch (currentChar)
                     {
+                    case '-':
+                        switch_off = true;
+                        break;
                     case 'i':
                         flags = (switch_off) ? flags & (~Pattern.CASE_INSENSITIVE) : flags | Pattern.CASE_INSENSITIVE;
                         break;
