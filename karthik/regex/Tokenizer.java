@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package karthik.regex;
 
 import karthik.regex.RegexTokenNames;
@@ -168,8 +167,6 @@ class Tokenizer {
         throws TokenizerException {
         CharClassRegexToken tokenChain;
         char prevChar = 0;
-        
-        boolean negated = false;
 
         char currentChar;
         try {
@@ -180,35 +177,40 @@ class Tokenizer {
 
             currentChar = inputString.charAt(indexPos++);
 
-            if (currentChar == NEGATIONCHAR) {
-                negated = true;
-                tokenChain = new CharClassRegexToken("", negated, flags);
-            } else if (currentChar == '[') { // nested char class
+            if (currentChar == NEGATIONCHAR)
+                tokenChain = new CharClassRegexToken("", true, flags);
+            else if (currentChar == '[') { // nested char class
                 indexPos--;
-                tokenChain = new CharClassRegexToken("", negated, flags);
+                tokenChain = new CharClassRegexToken("", false, flags);
                 tokenChain.add(parseCharClass(), true);
             } else {
-                tokenChain = new CharClassRegexToken("", negated, flags);
+                tokenChain = new CharClassRegexToken("", false, flags);
                 indexPos--;
             }
 
             while ((currentChar = inputString.charAt(indexPos++)) != ']') {
 
                 if (currentChar == '\\') {
+                    // handle escaped characters or char classes like \d
                     currentChar = inputString.charAt(indexPos++);
-                    // TODO: Put this switch in a separate method and handle classes like [\n-#] or [\n-\\] properly
                     switch (currentChar) {
-                        case 'd': case 'D': case 'w': case 'W':case 's': case 'S':
-                            if(prevChar != 0){
+                        case 'd':
+                        case 'D':
+                        case 'w':
+                        case 'W':
+                        case 's':
+                        case 'S':
+                            if (prevChar != 0) {
                                 tokenChain.append(prevChar);
-                                prevChar = 0;                                
+                                prevChar = 0;
                             }
-                            tokenChain.add(handleCharClassEscapes(currentChar), true);
+                            tokenChain.add(handleCharClassEscapes(currentChar),
+                                true);
                             break;
-                       default:                           
-                            if(prevChar != 0)
+                        default:
+                            if (prevChar != 0)
                                 tokenChain.append(prevChar);
-                            prevChar = handleCharClassCharacterEscapes(currentChar);
+                            prevChar = getCharforEscapedChar(currentChar);
                             break;
                     }
                     continue;
@@ -229,17 +231,15 @@ class Tokenizer {
                         continue;
                     }
                 if (currentChar == '-') {  // fill in char range  
-// TODO: won't work properly for [-f], will try to take [ as start of range
-// TODO: same with [\n-l] will create n-l as range.                     
-                    if (prevChar == 0){
+                    if (prevChar == 0) {
                         // nothing in previous character so this is just a hyphen and not a range
                         // treat it like any other character
                         prevChar = currentChar;
                         continue;
                     }
-                        
+
                     char end = getNextChar();
-                    if(end == 0) {
+                    if (end == 0) {
                         // next char does not create a char range
                         // so just append the hyphen and continue
                         tokenChain.append(currentChar);
@@ -253,11 +253,11 @@ class Tokenizer {
                     tokenChain.append(prevChar, end);
                     continue;
                 }
-                // character is a normal character so just add it to the chain
+                // if we got here, character is a normal character so just add it to the chain
                 if (prevChar != 0)
                     tokenChain.append(prevChar);
                 prevChar = currentChar;
-                            
+
             }
             if (currentChar != ']')
                 throw new TokenizerException(
@@ -272,89 +272,105 @@ class Tokenizer {
         }
     }
 
-    private char getNextChar() throws TokenizerException{
+    private char getNextChar() throws TokenizerException {
     // used only inside character classes
-    // returns character if there is a character including escape sequences
-    // otherwise returns null
+        // returns character if there is a character including escape sequences
+        // otherwise returns 0
         int savedIndexPos = indexPos; // records indexPos when this method was called
-        try{
+        try {
             char currentChar = inputString.charAt(indexPos++);
-            switch(currentChar){
-                case '[' : case ']':
+            switch (currentChar) {
+                case '[':
+                case ']':
                     indexPos = savedIndexPos;
                     return 0;
                 case '\\':
                     char escapeChar = inputString.charAt(indexPos++);
-                    if("wWdDsS".contains(String.valueOf(escapeChar))){
+                    if ("wWdDsS".contains(String.valueOf(escapeChar))) {
                         indexPos = savedIndexPos;
                         return 0;
                     }
-                    switch(escapeChar){
-                        case 'x':
-                            return processHexDigits();
-                        case '0':
-                            return processOctalDigits();
-                        case 'n':
-                            return '\n';
-                        case '\r':
-                            return '\r';
-                        default:
-                            throw new TokenizerException("Unknown escaped character " + escapeChar + " in character class");
-                    }                    
+                    return getCharforEscapedChar(escapeChar);
                 default:
                     // this is just a normal character so return it
                     return currentChar;
             }
-        }
-        catch(StringIndexOutOfBoundsException siobe){
-            throw new TokenizerException("Reached unexpected end of string when parsing character class - "
-                + siobe.getMessage());           
+        } catch (StringIndexOutOfBoundsException siobe) {
+            throw new TokenizerException(
+                "Reached unexpected end of string when parsing character class - "
+                + siobe.getMessage());
         }
     }
-    
-    private CharClassRegexToken handleCharClassEscapes(char escapeChar) throws TokenizerException{
-    // handles /d, /D, /s, /S, /w, /W
+
+    private CharClassRegexToken handleCharClassEscapes(char escapeChar) throws TokenizerException {
+        // handles /d, /D, /s, /S, /w, /W inside character classes, NOT in main regex
         switch (escapeChar) {
-                        case 'd':
-                            return new CharClassRegexToken('0', '9',
-                                false, flags);                            
-                        case 'D':
-                            return new CharClassRegexToken('0', '9',
-                                true, flags);
-                        case 'w':
-                            return makeWordCharClass(false);
-                        case 'W':
-                            return makeWordCharClass(true);
-                        case 's':
-                            return new CharClassRegexToken(
-                                "\\n\\r\\f\\b \\t", false, flags);
-                        case 'S':
-                            return new CharClassRegexToken(
-                                "\\n\\r\\f\\b \\t", true, flags);
-                        default:
-                            throw new TokenizerException("Internal error: handleCharClassEscapes called with unrecognized escape character");
+            case 'd':
+                return new CharClassRegexToken('0', '9',
+                    false, flags);
+            case 'D':
+                return new CharClassRegexToken('0', '9',
+                    true, flags);
+            case 'w':
+                return makeWordCharClass(false);
+            case 'W':
+                return makeWordCharClass(true);
+            case 's':
+                return new CharClassRegexToken(
+                    "\\n\\r\\f\\b \\t", false, flags);
+            case 'S':
+                return new CharClassRegexToken(
+                    "\\n\\r\\f\\b \\t", true, flags);
+            default:
+                throw new TokenizerException(
+                    "Internal error: handleCharClassEscapes called with unrecognized escape character");
         }
-        
+
     }
-    
-    private char handleCharClassCharacterEscapes(char escapeChar) throws TokenizerException{
-        // handles \n, \r, hex and octal escapes
-        switch(escapeChar){
+
+    private char getCharforEscapedChar(char escapeChar) throws TokenizerException {
+        // handles escaped characters that become a single character
+        // returns 0 for unrecognized escapes
+        switch (escapeChar) {
             case 'n':
                 return '\n';
             case 'r':
                 return '\r';
+            case 't':
+                return '\t';
+            case 'f':
+                return '\f';
+            case '\\':
+            case '&':
+            case '[':
+            case ']':
+                return escapeChar;
             case 'x':
                 return processHexDigits();
             case '0':
                 return processOctalDigits();
             default:
-                throw new TokenizerException("Unknown escaped character " + escapeChar + " in character class");
+                throw new TokenizerException(
+                    "Expected control character but found "
+                    + "\\" + escapeChar + " at index position " + indexPos);
         }
     }
-    
+
     private void handleEscapeChars(ArrayList<RegexToken> tokens, char c) throws TokenizerException {
         // handles escape characters in main regex(not inside character class)
+        try {
+            char charVal = getCharforEscapedChar(c);
+            // method call above will throw exception if it can't handle the control character
+            // if we get to line below
+            // c was an escape that becomes a single character like \n, \x0F etc.
+            // so just add it and return
+            tokens.add(new RegexToken(RegexTokenNames.CHAR, charVal, flags));
+            return;
+        } catch (TokenizerException te) {
+           // ignore exception since it might just be that we have a more complex 
+            // control character that this method can handle           
+        }
+
         switch (c) {
             case 'd':
                 tokens.add(new RegexToken(RegexTokenNames.DIGIT, flags));
@@ -373,15 +389,6 @@ class Tokenizer {
                 break;
             case 'S':
                 tokens.add(new RegexToken(RegexTokenNames.NONWHITESPACE, flags));
-                break;
-            case 'n':
-                tokens.add(new RegexToken(RegexTokenNames.NEWLINE, flags));
-                break;
-            case 'r':
-                tokens.add(new RegexToken(RegexTokenNames.CARR_RETURN, flags));
-                break;
-            case 'f':
-                tokens.add(new RegexToken(RegexTokenNames.FORMFEED, flags));
                 break;
             case 'b':
                 tokens.add(new BoundaryRegexToken(RegexTokenNames.WORD_BOUNDARY,
@@ -410,17 +417,17 @@ class Tokenizer {
                 tokens.add(handlePosix(true));
                 break;
             case 'x':
-                tokens.add(new RegexToken(RegexTokenNames.CHAR, processHexDigits(), flags));
+                tokens.add(new RegexToken(RegexTokenNames.CHAR,
+                    processHexDigits(), flags));
                 break;
             case '0':
-                tokens.add(new RegexToken(RegexTokenNames.CHAR, processOctalDigits(), flags));
+                tokens.add(new RegexToken(RegexTokenNames.CHAR,
+                    processOctalDigits(), flags));
                 break;
             case '{':
-            case '\\':
             case '*':
             case '+':
             case '.':
-            case '[':
             case '(':
                 tokens.add(new RegexToken(RegexTokenNames.CHAR, c, flags));
                 break;
