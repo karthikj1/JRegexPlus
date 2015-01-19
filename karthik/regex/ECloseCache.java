@@ -25,11 +25,11 @@ import karthik.regex.dataStructures.Stack;
  *
  * @author karthik
  */
-class EClose_Cache {
+class ECloseCache {
 
     private Map<Integer, Integer[]> eclose_cache;
 
-    private EClose_Cache(Map<Integer, Integer[]> cache) {
+    private ECloseCache(Map<Integer, Integer[]> cache) {
         eclose_cache = cache;
     }
 
@@ -39,7 +39,7 @@ class EClose_Cache {
         return (return_array == null) ? new Integer[0] : return_array;
     }
 
-    static EClose_Cache create_eclose_cache(TransitionTable transition_table) {
+    static ECloseCache create_eclose_cache(TransitionTable transition_table) {
         // e-closes every state in the transition matrix 
 
         Integer[] eclose_array_for_one_state;
@@ -52,7 +52,7 @@ class EClose_Cache {
             return_map.put(source_state, eclose_array_for_one_state);
         }
 
-        return new EClose_Cache(return_map);
+        return new ECloseCache(return_map);
     }
 
     private static Integer[] calc_eclose_states(TransitionTable transition_table,

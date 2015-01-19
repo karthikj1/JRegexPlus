@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package karthik.regex;
 
 import karthik.regex.dataStructures.Stack;
@@ -35,8 +34,8 @@ class NFASimulator {
     protected Integer region_start, region_end;
 
     protected Stack<Integer> boundary_stack = new Stack<>();
-    protected Stack<Path_to_State> boundary_stack_objects = new Stack<>();
-    protected EClose_Cache eclose_cache;
+    protected Stack<PathToState> boundary_stack_objects = new Stack<>();
+    protected ECloseCache eclose_cache;
 
     NFASimulator(TransitionTable start_nfa) {
         original_start_table = start_nfa;
@@ -50,23 +49,23 @@ class NFASimulator {
         return regex_string;
     }
 
-    private NFA_StateObject init_simulator() {
+    private NFAStateObject init_simulator() {
         transMatrix = original_start_table;
-        Path_to_State_List eclosed_start_states = new Path_to_State_List();
-        eclose_cache = EClose_Cache.create_eclose_cache(transMatrix);
+        PathToStateList eclosed_start_states = new PathToStateList();
+        eclose_cache = ECloseCache.create_eclose_cache(transMatrix);
 
         Integer start = original_start_table.getStart();
-        eclosed_start_states.put(start, new Path_to_State());
+        eclosed_start_states.put(start, new PathToState());
         eclosed_start_states = eclose(eclosed_start_states);
-        return new NFA_StateObject(original_start_table, eclosed_start_states);
+        return new NFAStateObject(original_start_table, eclosed_start_states);
 
     }
 
-    Path_to_State findOneMatch(CharSequence s, Integer start, Integer end) throws MatcherException {
+    PathToState findOneMatch(CharSequence s, Integer start, Integer end) throws MatcherException {
 
-        Path_to_State longest_success = null;
-        NFA_StateObject current_nfa;
-        Path_to_State_List states;
+        PathToState longest_success = null;
+        NFAStateObject current_nfa;
+        PathToStateList states;
 
         current_nfa = init_simulator();
         transMatrix = current_nfa.trans_table;
@@ -105,13 +104,13 @@ class NFASimulator {
         return longest_success;
     }
 
-    private Path_to_State get_longest_success(Path_to_State_List states,
-        Path_to_State longest_success) {
+    private PathToState get_longest_success(PathToStateList states,
+        PathToState longest_success) {
         /* checks if states contains any finish states and return the longer of
          * the finish state or the current longest success.
          * returns original longest_success if there is no finish state in the Map states
          */
-        Path_to_State finish_state = states.get(finish);
+        PathToState finish_state = states.get(finish);
         if (finish_state == null)
             return longest_success;
 
@@ -126,13 +125,13 @@ class NFASimulator {
         return longest_success;
     }
 
-    private Path_to_State_List move(final Path_to_State_List source_states) throws MatcherException {
+    private PathToStateList move(final PathToStateList source_states) throws MatcherException {
         /* assumes source_states has already been e-closed
          moves to new state based on one character at index string_index from the string to match_string
          and returns a new set of states along with their related state objects
          */
-        Path_to_State_List move_states = new Path_to_State_List();
-        Path_to_State target_state_obj;
+        PathToStateList move_states = new PathToStateList();
+        PathToState target_state_obj;
         Matchable match_token;
 
         for (Integer current_state : source_states.keySet())
@@ -144,7 +143,7 @@ class NFASimulator {
                 if (!move_states.containsKey(target_state))
                     if ((!match_token.isBoundaryOrLookaround()) && match_token.
                         matches(search_string, string_index)) {
-                        target_state_obj = new Path_to_State(source_states.get(
+                        target_state_obj = new PathToState(source_states.get(
                             current_state));
                         target_state_obj.append(string_index, match_token.
                             getGroupID());
@@ -155,15 +154,15 @@ class NFASimulator {
         return move_states;
     }
 
-    private Path_to_State_List boundary_close(
-        final Path_to_State_List source_states)
+    private PathToStateList boundary_close(
+        final PathToStateList source_states)
         throws MatcherException {
         /* assumes source_states has already been e-closed
          moves to new state based on the boundary at index string_index from the string search_string
          and returns a new set of states along with their related state objects
          */
-        Path_to_State_List move_states = new Path_to_State_List();
-        Path_to_State current_state_obj;
+        PathToStateList move_states = new PathToStateList();
+        PathToState current_state_obj;
 
         Matchable match_token;
         boolean found_boundary_token;
@@ -216,15 +215,15 @@ class NFASimulator {
         return move_states;
     }
 
-    private Path_to_State_List process_quantifiers(
-        final Path_to_State_List source_states)
+    private PathToStateList process_quantifiers(
+        final PathToStateList source_states)
         throws MatcherException {
         /* 
          moves to new state based on the boundary at index string_index from the string search_string
          and returns a new set of states along with their related state objects
          */
-        Path_to_State_List move_states = new Path_to_State_List();
-        Path_to_State current_state_obj;
+        PathToStateList move_states = new PathToStateList();
+        PathToState current_state_obj;
 
         Matchable match_token;
         boolean retain_state, has_transitions;
@@ -256,7 +255,7 @@ class NFASimulator {
                 if (!move_states.containsKey(target_state)) {
 
                     if (match_token.isQuantifier()) {
-                        Path_to_State target_state_obj = new Path_to_State(
+                        PathToState target_state_obj = new PathToState(
                             current_state_obj);
                         target_state_obj.processQuantifier(string_index,
                             (QuantifierToken) match_token);
@@ -274,7 +273,7 @@ class NFASimulator {
                     retain_state = true;
                 } else if (!match_token.isQuantifier() && !match_token.
                     isEpsilon())
-                 // if we got here, this token is for a normal transition or for a boundary transition
+                    // if we got here, this token is for a normal transition or for a boundary transition
                     // which may match the *next* character or boundary, so we keep this state active       
                     retain_state = true;
 
@@ -292,10 +291,10 @@ class NFASimulator {
         return move_states;
     }
 
-    private Path_to_State_List eclose(final Path_to_State_List current_states) {
+    private PathToStateList eclose(final PathToStateList current_states) {
 
-        Path_to_State_List eclose_map = new Path_to_State_List();
-        Path_to_State target_state_obj;
+        PathToStateList eclose_map = new PathToStateList();
+        PathToState target_state_obj;
         Integer[] eps_transitions;
 
         for (Integer stateID : current_states.keySet()) {

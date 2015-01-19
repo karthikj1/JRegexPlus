@@ -21,14 +21,14 @@ package karthik.regex;
  *
  * @author karthik
  */
-class EnhancedNFA_StateObject {
+class EnhancedNFAStateObject {
 
     TransitionTable trans_table;
-    Enhanced_Path_to_State_List states;
-    EClose_Cache eclose_cache;
+    EnhancedPathToStateList states;
+    ECloseCache eclose_cache;
 
-    EnhancedNFA_StateObject(TransitionTable t, Enhanced_Path_to_State_List m,
-        EClose_Cache cache) {
+    EnhancedNFAStateObject(TransitionTable t, EnhancedPathToStateList m,
+        ECloseCache cache) {
         trans_table = t;
         states = m;
         eclose_cache = cache;

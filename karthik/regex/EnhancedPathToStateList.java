@@ -27,11 +27,11 @@ import java.util.Set;
  *
  * @author karthik
  */
-class Enhanced_Path_to_State_List {
+class EnhancedPathToStateList {
 
-    Map<Integer, List<Path_to_State>> states;
+    Map<Integer, List<PathToState>> states;
 
-    Enhanced_Path_to_State_List() {
+    EnhancedPathToStateList() {
         states = new HashMap<>();
     }
 
@@ -39,7 +39,7 @@ class Enhanced_Path_to_State_List {
         return states.containsKey(key);
     }
 
-    List<Path_to_State> get(Integer key) {
+    List<PathToState> get(Integer key) {
         // returns list of state objects corresponding to given key
         // or returns an empty list to avoid returning null
 
@@ -49,23 +49,23 @@ class Enhanced_Path_to_State_List {
             return new ArrayList<>();
     }
 
-    Path_to_State put(Integer key, Path_to_State stateObj) {
+    PathToState put(Integer key, PathToState stateObj) {
         if (states.containsKey(key))
             states.get(key).add(stateObj);
         else {
-            List<Path_to_State> newList = new ArrayList<>();
+            List<PathToState> newList = new ArrayList<>();
             newList.add(stateObj);
             states.put(key, newList);
         }
         return stateObj;
     }
 
-    void putUnique(Integer key, Path_to_State stateObj) // adds key only if stateObj is not already in the map for the given key
+    void putUnique(Integer key, PathToState stateObj) // adds key only if stateObj is not already in the map for the given key
     {
         if (states.containsKey(key)) {
             boolean isUnique = true;
-            List<Path_to_State> values = states.get(key);
-            for (Path_to_State value_obj : values)
+            List<PathToState> values = states.get(key);
+            for (PathToState value_obj : values)
                 if (value_obj.equals(stateObj)) {
                     isUnique = false;
                     break;
@@ -74,7 +74,7 @@ class Enhanced_Path_to_State_List {
             if (isUnique)
                 values.add(stateObj);
         } else {
-            List<Path_to_State> newList = new ArrayList<>();
+            List<PathToState> newList = new ArrayList<>();
             newList.add(stateObj);
             states.put(key, newList);
         }

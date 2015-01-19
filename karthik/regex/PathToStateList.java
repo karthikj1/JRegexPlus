@@ -25,11 +25,11 @@ import java.util.Set;
  *
  * @author karthik
  */
-class Path_to_State_List {
+class PathToStateList {
 
-    Map<Integer, Path_to_State> states;
+    Map<Integer, PathToState> states;
 
-    Path_to_State_List() {
+    PathToStateList() {
         states = new HashMap<>();
     }
 
@@ -37,11 +37,11 @@ class Path_to_State_List {
         return states.containsKey(key);
     }
 
-    Path_to_State get(Integer key) {
+    PathToState get(Integer key) {
         return states.get(key);
     }
 
-    Path_to_State put(Integer key, Path_to_State stateObj) {
+    PathToState put(Integer key, PathToState stateObj) {
         return states.put(key, stateObj);
     }
 

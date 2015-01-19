@@ -21,13 +21,13 @@ package karthik.regex;
  *
  * @author karthik
  */
-class BackRefString_RegexToken extends RegexToken {
+class BackRefStringRegexToken extends RegexToken {
 
     private CharSequence match_text;
     private int match_counter;
     EndBackRefRegexToken end_backref_token;
 
-    BackRefString_RegexToken(CharSequence match, EndBackRefRegexToken end_token) {
+    BackRefStringRegexToken(CharSequence match, EndBackRefRegexToken end_token) {
         type = RegexTokenNames.BACKREF_STRING;
         match_text = match;
         end_backref_token = end_token;

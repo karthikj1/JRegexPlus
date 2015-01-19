@@ -70,7 +70,7 @@ class TransitionTable implements Cloneable {
 
         EndBackRefRegexToken end_backref_token = new EndBackRefRegexToken(0, 1);
 
-        backref_string_token = new BackRefString_RegexToken(match_string,
+        backref_string_token = new BackRefStringRegexToken(match_string,
             end_backref_token);
         backref_string_token.addGroupIDList(groupIDList);
 

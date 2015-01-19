@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author karthik
  */
-class Path_to_State {
+class PathToState {
 
     /**
      * ****************************
@@ -51,14 +51,14 @@ class Path_to_State {
     private static final int START = 0;
     private static final int END = 1;
 
-    Path_to_State() {
+    PathToState() {
         Group_locations = new HashMap<>();
         quantifier_flags = new ArrayList<>();
         lazy_quantifier_flags = new ArrayList<>();
         lazy_quantifier_count = new HashMap<>();
     }
 
-    Path_to_State(Path_to_State copyObj) {
+    PathToState(PathToState copyObj) {
         Integer[] tempArray;
 
         Group_locations = new HashMap<>();
@@ -213,8 +213,8 @@ class Path_to_State {
         return Arrays.copyOf(tempArray, 2);
     }
 
-    Path_to_State compare_finish_states(Path_to_State new_finish) {
-        /* compares this object to another Path_to_State and returns the object
+    PathToState compare_finish_states(PathToState new_finish) {
+        /* compares this object to another PathToState and returns the object
          that has the longer result after accounting for lazy quantifiers
          IF the objects have the same length, it returns this object
          NOTE: this method is only meaningful when called on states that are finish states
@@ -267,7 +267,7 @@ class Path_to_State {
         return endIndex - startIndex + 1;
     }
 
-    public boolean equals(Path_to_State obj2) {
+    public boolean equals(PathToState obj2) {
         // first check if obj2 references the same object as this
         if (obj2 == this)
             return true;

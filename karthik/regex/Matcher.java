@@ -38,7 +38,7 @@ public class Matcher {
     Matcher(TransitionTable m) {
 
         if (m.contains_backref())
-            transitions = new Enhanced_NFASimulator(m);
+            transitions = new EnhancedNFASimulator(m);
         else
             transitions = new NFASimulator(m);
 
@@ -66,7 +66,7 @@ public class Matcher {
     }
 
     private boolean find(final CharSequence s, boolean match_from_start) throws MatcherException {
-        Path_to_State result;
+        PathToState result;
 
         results = new ArrayList<>();
         search_string = s;

@@ -21,12 +21,12 @@ package karthik.regex;
  *
  * @author karthik
  */
-class NFA_StateObject {
+class NFAStateObject {
 
     TransitionTable trans_table;
-    Path_to_State_List states;
+    PathToStateList states;
 
-    NFA_StateObject(TransitionTable t, Path_to_State_List m) {
+    NFAStateObject(TransitionTable t, PathToStateList m) {
         trans_table = t;
         states = m;
     }
