@@ -53,7 +53,7 @@
 <p>JRegexPlus implements the McNaughton-Yamada-Thompson algorithm to construct an NFA. This algorithm is described in detail in Aho, Lam, Sethi, and Ullman's 2006 <em>Compilers: Principles, Techniques, and Tools</em>(Algorithm 3.23) and has the advantage of being as fast as the standard backtracking implementations in normal cases while maintaining its performance in the corner cases.</p>
 
 <p>However, the algorithm, as described in textbooks, does not allow either for sub-match tracking or for backreferences. The following paragraphs explain how JRegexPlus adapts the algorithm to allow both. The description below is a bit terse for now and is best read after understanding how existing regular expression engines work. Russ Cox's <a href="http://swtch.com/~rsc/regexp/regexp1.html">description of RE2</a>
-and Eli Bendersky's <a href="http://eli.thegreenplace.net/files/docs/forays/col4.html">series of articles</a> both provide good explanations as does Jeff Friedl's book <em>Mastering Regular Expressions</em>.</p>
+and Eli Bendersky's <a href="http://eli.thegreenplace.net/files/docs/forays/forays-cols.tgz">series of articles</a> both provide good explanations as does Jeff Friedl's book <em>Mastering Regular Expressions</em>.</p>
 
 <p><strong><em>Submatch grouping</em></strong></p>
 
