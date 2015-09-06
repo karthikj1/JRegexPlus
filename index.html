@@ -35,7 +35,7 @@
 
 <p><em><strong>What it does</strong></em></p>
 
-<p>This is a full-fledged regular expression engine written in Java. It is unique in that it is a one-pass NFA engine <em>without</em> backtracking that can handle back-references, reluctant quantifiers, provide sub-match groupings and process lookaround operators with arbitrary embedded regular expressions(including variable-length operators like + and *). The ability to handle back-references without backtracking or multiple passes is unique among publicly available regular expression engines - including popular ones like Perl, PCRE or java.util.regex.</p>
+<p>This is a full-fledged regular expression engine written in Java. It is unique in that it is a one-pass NFA engine <em>without</em> backtracking that can handle back-references, reluctant quantifiers, provide sub-match groupings and process lookaround operators with arbitrary embedded regular expressions(including variable-length operators like + and *). The ability to handle back-references without backtracking or multiple passes is unique among publicly available regular expression engines - including popular ones like Perl, PCRE or java.util.regex and goes against the popular belief that only backtracking implementations can handle backreferences.</p>
 
 <p><em><strong>What it includes</strong></em></p>
 
@@ -52,11 +52,11 @@
 <ul>
 <li> The primary advantage of a non-backtracking implementation is the performance improvement in cases that would cause a backtracking engine to hang. Compared to a DFA, this implementation also supports submatch grouping, backreferences and lookaround with arbitrary regular expressions.
 <p></p>
-<li> The general problem of matching regexes that include backreferences is NP-complete so it is still possible to construct combinations of regular expressions and text that will cause exponential blowup. However, this engine's technique has the advantage of other Thompson NFA implementations in that expressions without backreferences will not create exponential blowup. As a result, the number of corner cases with backreferences that blowup the engine are also fewer.
+<li> The general problem of matching regexes that include backreferences is NP-hard so it is still possible to construct combinations of regular expressions and text that will cause exponential blowup. However, this engine's technique has the advantage of other Thompson NFA implementations in that expressions without backreferences will not create exponential blowup. As a result, the number of corner cases with backreferences that blowup the engine are also fewer.
 <p></p>
 <li> The results honour POSIX-style left-most longest matching. Given the expression (nfa|nfa karthik) on a string "nfa karthik", a traditional nfa will match just nfa. JRegexPlus will match "nfa karthik".
 <p></p>
-<li> For simple regexes, the processing speed is competitive though not necessarily the fastest. However, this has more to do with the fact that this is meant as a proof of concept demo to show that backreferences can work without backtracking and not as a production regex engine. With optimizations and tighter code, the core algorithm can be expected to perform at least as well as a backtracking implementation in normal cases while continuing to respond fast in cases that would make a backtracker hang.
+<li> For simple regexes, the processing speed is competitive though not necessarily the fastest. However, this has more to do with the fact that this is meant as a proof of concept demo to show that backreferences can work without backtracking and not as a production regex engine. The core algorithm can be expected to perform comparably to a backtracking implementation in normal cases while continuing to respond fast in cases that would make a backtracker hang.
 </ul>
 
 <p></p>
